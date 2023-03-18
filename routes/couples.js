@@ -216,4 +216,105 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /couples/{id}:
+ *  put:
+ *      summary: 커플 정보 수정
+ *      tags:
+ *       - Couple
+ *      parameters:
+ *          - in: path
+ *            name: id
+ *            schema:
+ *              type: string
+ *            required: true
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/components/schemas/createCoupleInput'
+ *      responses:
+ *          200:
+ *              description: 커플 정보 수정 성공
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/Couple'
+ *          404:
+ *              description: 해당 id의 커플 정보가 없음
+ *          409:
+ *              description: 이미 해당 사용자에게 커플 코드가 부여된 상태
+ */
+router.put('/:id', async (req, res, next) => {
+  try {
+      const couple = await Couple.findById(req.params.id);
+      if (!couple) {
+          res.status(404).json({"error":"couple not found"});
+          return;
+      }
+      
+      const user1_id = req.body.user1_id;
+      const user2_id = await User.findOne({code: req.body.code});
+      if(!user2_id){
+          res.status(400).json({"error":"wrong code"});
+          return;
+      }
+      
+      if( await Couple.exists({user1_id: user1_id}) && couple.user1_id !== user1_id){
+          res.status(409).json({"error": "user1 already have couple code"});
+          return;
+      }
+
+      if( await Couple.exists({user2_id: user2_id}) && couple.user2_id !== user2_id){
+          res.status(409).json({"error": "user2 already have couple code"});
+          return;
+      }
+
+      couple.user1_id = user1_id;
+      couple.user2_id = user2_id;
+      couple.firstDate = req.body.firstDate;
+      await couple.save();
+      res.status(200).json(couple);
+  } catch (err) {
+      console.error(err);
+      next(err);
+  }
+});
+
+/**
+* @swagger
+* /couples/{id}:
+*  delete:
+*      summary: 커플 정보 삭제
+*      tags:
+*       - Couple
+*      parameters:
+*          - in: path
+*            name: id
+*            schema:
+*              type: string
+*            required: true
+*      responses:
+*          204:
+*              description: 커플 정보 삭제 성공
+*          404:
+*              description: 해당 id의 커플 정보가 없음
+*/
+router.delete('/:id', async (req, res, next) => {
+  try {
+      const couple = await Couple.findByIdAndDelete(req.params.id);
+      if (!couple) {
+          res.status(404).json({"error":"couple not found"});
+          return;
+      }
+      res.sendStatus(204);
+  } catch (err) {
+      console.error(err);
+      next(err);
+  }
+});
+
 module.exports = router;

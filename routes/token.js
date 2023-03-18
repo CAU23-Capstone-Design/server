@@ -84,49 +84,32 @@ router.post('/', async (req,res) => {
 
 /**
  * @swagger
- * /token/test:
- *  get:
- *      security:
- *          - jwtToken: []
- *      summary: 토큰 유효성 검증
- *      tags:
+ * /test:
+ *   get:
+ *     summary: JWT 토큰 검증
+ *     tags:
  *       - Token
- *      responses:
- *          200:
- *              description: 토큰 검증 성공
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              token:
- *                                  type: string
- *                          example:
- *                              couple_id: "2d61bee99121f226661d03bd96e97a43"
- *                              user_id: "user_id"
- *                              iat: "1679043080"
- *                              exp: "1694595080"
- *                              iss: "lovestory"
- *          401:
- *              description: jwt 토큰이 변조된 경우
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          example:
- *                              code: 401
- *                              message: 유효하지 않은 토큰입니다.
- *
- *          403:
- *              description: jwt 토큰이 없는 경우
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          example:
- *                              code: 403
- *                              message: jwt token 정보가 존재하지 않습니다.
+ *     security:
+ *       - jwtToken: []
+ *     responses:
+ *       200:
+ *         description: JWT 토큰 검증 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 couple_id:
+ *                   type: string
+ *                 user_id:
+ *                   type: string
+ *               example:
+ *                 couple_id: "2d61bee99121f226661d03bd96e97a43"
+ *                 user_id: "28019"
+ *       401:
+ *         description: JWT 토큰 검증 실패
  */
+
 
 router.get('/test', verifyToken, (req, res) => {
     res.json(req.decoded);

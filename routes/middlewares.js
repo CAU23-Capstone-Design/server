@@ -1,33 +1,47 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
-exports.verifyToken = (req, res, next) => {
-  // 인증 완료
+module.exports = {
+  verifyToken: (req, res, next) => {
+    try {
+      const bearerHeader = req.headers.authorization;
+      if (typeof bearerHeader !== 'undefined') {
+        const bearer = bearerHeader.split(' ');
+        const token = bearer[1];
+
+        // 토큰을 검증합니다.
+        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+          if (err) {
+            res.status(401).json({ error: 'Invalid token' });
+          } else {
+            req.decoded = decoded;
+            next();
+          }
+        });
+      } else {
+        res.status(401).json({ error: 'Invalid token' });
+      }
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  },
+};
+
+/**
+ * 
+ * router.get('/protected', verifyToken, async (req, res) => {
   try {
-    if( !req.headers.authorization){
-        return res.status(403).json({
-            code: 403,
-            message: "jwt token 정보가 존재하지 않습니다."
-        })
-    }
+    // verifyToken 미들웨어를 통과한 후에는
+    // req.decoded 객체에 토큰에 담긴 정보가 들어있습니다.
+    const { couple_id, user_id } = req.decoded;
 
-    const token = req.headers.authorization.split(' ')[1];
-    console.log(token);
-    req.decoded = jwt.verify(token, process.env.JWT_SECRET)
-    return next();
+    // 이곳에서 토큰이 유효한지 여부를 확인할 수 있습니다.
+    // ...
+
+    res.status(200).json({ message: 'Hello, world!' });
+  } catch (error) {
+    console.error(error);
+    next(error);
   }
-  
-  // 인증 실패 
-  catch(error) {
-    if (error.name === 'TokenExpireError') {
-      return res.status(419).json({
-        code: 419,
-        message: '토큰이 만료되었습니다.'
-      });
-    }
-   return res.status(401).json({
-     code: 401,
-     message: '유효하지 않은 토큰입니다.'
-   });
-  }
-}
+});
+ */

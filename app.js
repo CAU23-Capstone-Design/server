@@ -11,7 +11,7 @@ const md5 = require('md5')
 const usersRouter = require('./routes/users');
 const couplesRouter = require('./routes/couples')
 const tokenRouter = require('./routes/token');
-
+const gpsRouter = require('./routes/gps');
 dotenv.config();
 const app = express();
 app.set('port',process.env.PORT || 3000);
@@ -47,6 +47,7 @@ app.use(express.json())
 app.use('/users',usersRouter);
 app.use('/couples',couplesRouter);
 app.use('/token', tokenRouter);
+app.use('/gps',gpsRouter);
 
 app.use((req, res, next) => {
     const error =  new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
