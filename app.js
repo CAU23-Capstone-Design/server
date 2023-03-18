@@ -32,12 +32,16 @@ const options = {
         },
         servers: [
             {
-                url : "http://localhost:3000"
+                url: "http://3.34.189.103:3000"
+            },
+            {
+                url: "http://localhost:3000"
             }
         ],
     },
     apis: ["./routes/*.js"]
 }
+
 
 const specs = swaggerJsDoc(options)
 
