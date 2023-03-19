@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const AutoIncrementFactory = require('mongoose-sequence');
 
+const { Schema } = mongoose;
 const gpsSchema = new Schema({
+  index: {
+    type: Number,
+    unique: true,
+  },
   user_id: {
     type: String,
     required: true,
@@ -16,8 +21,11 @@ const gpsSchema = new Schema({
   },
   timestamp: {
     type: Date,
-    default: Date.now,
+    required: true,
   },
 });
 
-module.exports = mongoose.model('GPS', gpsSchema);
+const AutoIncrement = AutoIncrementFactory(mongoose.connection);
+gpsSchema.plugin(AutoIncrement, { inc_field: 'index', id: 'gpsIndex' });
+
+module.exports = mongoose.model('Gps', gpsSchema);

@@ -84,7 +84,7 @@ router.post('/', async (req,res) => {
 
 /**
  * @swagger
- * /test:
+ * /token/test:
  *   get:
  *     summary: JWT 토큰 검증
  *     tags:

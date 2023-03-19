@@ -7,6 +7,7 @@ const connect = require('./schemas');
 const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const md5 = require('md5')
+const imagesRouter = require('./routes/images');
 
 const usersRouter = require('./routes/users');
 const couplesRouter = require('./routes/couples')
@@ -52,6 +53,8 @@ app.use('/users',usersRouter);
 app.use('/couples',couplesRouter);
 app.use('/token', tokenRouter);
 app.use('/gps',gpsRouter);
+app.use('/images', imagesRouter);
+
 
 app.use((req, res, next) => {
     const error =  new Error(`${req.method} ${req.url} 라우터가 없습니다.`);
