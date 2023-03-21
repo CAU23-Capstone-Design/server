@@ -153,10 +153,10 @@ router.post('/sync', async (req, res, next) => {
       const { couple_id, user_id } = req.decoded;
       const { local_ids } = req.body;
   
-      const server_images = await Image.find({ couple_id, user_id });
+      const server_images = await Image.find({ couple_id });
   
       const images_to_upload = local_ids.filter(
-        (local_id) => !server_images.some((img) => img.local_id === local_id),
+        (local_id) => server_images.some((img) => img.local_id === local_id),
       );
   
       res.status(200).json({

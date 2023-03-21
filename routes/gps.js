@@ -1,5 +1,4 @@
 const express = require('express');
-const jwtMiddleware = require('./middlewares');
 const Gps = require('../schemas/gps');
 const router = express.Router();
 const User = require('../schemas/user');
@@ -13,8 +12,8 @@ const {verifyToken} = require('./middlewares');
  *     Gps:
  *       type: object
  *       properties:
- *         _id:
- *           type: string
+ *         index:
+ *           type: Number
  *           description: The auto-generated ID of the GPS record
  *         user_id:
  *           type: string
@@ -51,8 +50,6 @@ const getDistanceBetweenPoints = (lat1, lon1, lat2, lon2) => {
     return R * c;
   };
   
-router.use(jwtMiddleware.verifyToken);
-
 
 /**
  * @swagger
@@ -90,11 +87,12 @@ router.use(jwtMiddleware.verifyToken);
  *          500:
  *              description: Internal server error
 */
-router.post('/', async (req, res, next) => {
+router.post('/',verifyToken, async (req, res, next) => {
   try {
+    console.log('post /gps');
     const { latitude, longitude } = req.body;
     const { user_id } = req.decoded;
-
+    console.log(latitude, longitude, user_id);
     const gpsData = await Gps.create({
       user_id,
       latitude,
@@ -129,6 +127,9 @@ router.post('/', async (req, res, next) => {
 *                      isNearby:
 *                        type: boolean
 *                        description: Whether both users are nearby (within 100 meters)
+*                      distance:
+*                        type: Number
+*                        description: distance between couples(m)
 *          404:
 *              description: User, couple, or GPS data not found
 *          401:
@@ -137,7 +138,7 @@ router.post('/', async (req, res, next) => {
 *              description: Internal server error
 */
 
-router.get('/check-nearby', async (req, res, next) => {
+router.get('/check-nearby',verifyToken, async (req, res, next) => {
   try {
     const { user_id } = req.decoded;
     const user = await User.findById(user_id);
@@ -170,7 +171,7 @@ router.get('/check-nearby', async (req, res, next) => {
     );
 
     const isNearby = distance <= 100; // 100 meters
-    res.status(200).json({ isNearby });
+    res.status(200).json({ isNearby ,distance});
   } catch (error) {
     console.error(error);
     next(error);

@@ -208,7 +208,7 @@ router.post('/',async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
   try {
-    const couple = await Couple.findOne({_id:req.params.id});
+    const couple = await Couple.findOne({couple_id:req.params.id});
     res.json(couple);
   } catch (err) {
     console.error(err);
