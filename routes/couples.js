@@ -177,6 +177,11 @@ router.post('/',async (req, res, next) => {
             firstDate: req.body.firstDate,
         });
         console.log('couple created',couple);
+
+        // 커플 생성후 user1,user2의 코드 삭제
+        await User.findByIdAndUpdate(user1_id,{ $unset: {code:1} });
+        await User.findByIdAndUpdate(user2_id,{ $unset: {code:1} });
+        
         res.status(201).json(couple);
     } catch (err) {
       console.error(err);
