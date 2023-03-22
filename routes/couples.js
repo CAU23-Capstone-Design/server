@@ -156,6 +156,12 @@ router.post('/',async (req, res, next) => {
     try {
         const user1_id = req.body.user1_id;
         const user2_id = await User.findOne({code: req.body.code});
+
+        if (user1_id == user2_id){
+          res.status(400).json({"error" : "user1 insert self code"});
+          return;
+        }
+
         if(!user2_id){
             res.status(400).json({"error":"wrong code"});
             return;
@@ -169,6 +175,8 @@ router.post('/',async (req, res, next) => {
         if( await Couple.exists({user2_id: user2_id})){
             res.status(409).json({"error": "user2 already have couple code"});
         }
+
+
 
         const couple = await Couple.create({
             couple_id: md5(Date.now()),
@@ -310,7 +318,8 @@ router.put('/:id', async (req, res, next) => {
 */
 router.delete('/:id', async (req, res, next) => {
   try {
-      const couple = await Couple.findByIdAndDelete(req.params.id);
+      const couple = await Couple.findOneAndDelete({couple_id:req.params.id});
+//      const couple = await Couple.findByIdAndDelete(req.params.id);
       if (!couple) {
           res.status(404).json({"error":"couple not found"});
           return;
