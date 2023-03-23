@@ -42,7 +42,6 @@ const router = express.Router();
  *         description: Error occurred while processing the access token
  */
 
-
 router.post('/', async (req, res) => {
     const accessToken = req.body.accessToken;
 
@@ -112,6 +111,43 @@ router.post('/', async (req, res) => {
         res.status(500).send('Error occurred while processing the access token');
     }
 });
+
+/**
+ * @swagger
+ * /login/test:
+ *   post:
+ *     summary: 카카오톡 access Token을 이용한 lovestory
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               accessToken:
+ *                 type: string
+ *                 description: The access token from Kakao
+ *     responses:
+ *       200:
+ *         description: Login successful and JWT token is returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: Indicates if the login was successful
+ *                 message:
+ *                   type: string
+ *                   description: A message describing the result of the login process
+ *                 token:
+ *                   type: string
+ *                   description: The JWT token for the authenticated user
+ *       500:
+ *         description: Error occurred while processing the access token
+ */
 
 
 router.post('/test', async (req, res) => {
