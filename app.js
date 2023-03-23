@@ -7,8 +7,9 @@ const connect = require('./schemas');
 const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const md5 = require('md5')
-const imagesRouter = require('./routes/images');
 
+const imagesRouter = require('./routes/images');
+const loginRouter = require('./routes/login');
 const usersRouter = require('./routes/users');
 const couplesRouter = require('./routes/couples')
 const tokenRouter = require('./routes/token');
@@ -54,6 +55,7 @@ app.use('/couples',couplesRouter);
 app.use('/token', tokenRouter);
 app.use('/gps',gpsRouter);
 app.use('/images', imagesRouter);
+app.use('/login', loginRouter);
 
 
 app.use((req, res, next) => {
