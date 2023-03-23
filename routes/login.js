@@ -44,7 +44,7 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
     const accessToken = req.body.accessToken;
-
+    console.log(accessToken);
     try {
         // Verify and get user information from Kakao API
         const response = await axios.get('https://kapi.kakao.com/v2/user/me', {
@@ -56,9 +56,9 @@ router.post('/', async (req, res) => {
 
         const userData = response.data;
         const userId = userData.id;
-        const gender = userData.kakaoAccount.gender;
-        const birthday = userData.kakaoAccount.birthday;
-        const nickname = userData.kakaoAccount.profile.nickname;
+        const gender = userData.kakao_account.gender;
+        const birthday = userData.kakao_account.birthday;
+        const nickname = userData.kakao_account.profile.nickname;
 
         // Check if the user exists in the database
         let user = await User.findById(userId);
@@ -106,8 +106,10 @@ router.post('/', async (req, res) => {
             message: '카카오 로그인 성공',
             token,
         });
+        console.log('/login 토큰 발급',token);
 
     } catch (error) {
+        console.error(error);
         res.status(500).send('Error occurred while processing the access token');
     }
 });
