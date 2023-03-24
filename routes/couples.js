@@ -64,7 +64,7 @@ function generateCoupleId() {
  * @swagger
  * /couple:
  *   post:
- *     summary: 새로운 커플을 생성
+ *     summary: 새로운 커플을 생성 및 토큰 발행
  *     description: 두 명의 사용자를 짝지어서 새로운 커플을 생성한다. user_id가 담긴 jwtToken 정보와, 상대방의 code 정보가 필요하다.
  *     tags:
  *       - Couple
@@ -150,7 +150,6 @@ router.post('/', verifyToken, async (req, res) => {
     const payload = {
       user_id: user1_id,
       couple_id: couple.couple_id,
-      firstDate,
     };
     const newToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '60d' });
 
@@ -169,42 +168,71 @@ router.post('/', verifyToken, async (req, res) => {
  * @swagger
  * /couple:
  *   get:
- *     summary: 커플 정보를 호출
- *     description: couple_id가 담긴 jwtToken을 주면, 해당 커플 정보를 리턴한다.
+ *     summary: 로그인한 사용자 정보를 토대로 커플 정보가 담긴 토큰 발행
  *     tags:
  *       - Couple
  *     security:
  *       - jwtToken: []
  *     responses:
  *       200:
- *         description: Couple information retrieved successfully
+ *         description: 커플 정보가 조회되어, couple_id 와 user_id 가 담긴 jwtToken을 리턴한다.
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Couple'
- *       401:
- *         description: Invalid token
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Success message
+ *                 token:
+ *                   type: string
+ *                   description: user_id,couple_id 가 담긴 jwtToken
  *       404:
  *         description: Couple not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
  *       500:
  *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
  */
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const couple_id = req.decoded.couple_id;
-    const couple = await Couple.findOne({ couple_id });
+    const user1_id = req.decoded.user_id;
+    const couple = await Couple.findOne({ $or: [{ user1_id }, { user2_id: user1_id }] });
 
     if (!couple) {
       return res.status(404).json({ message: 'Couple not found' });
     }
 
-    res.json(couple);
+    // Generate new JWT with user and couple information
+    const payload = {
+      user_id: user1_id,
+      couple_id: couple.couple_id,
+    };
+    const newToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '60d' });
+
+    res.status(200).json({
+      message: 'Couple found',
+      token: newToken,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 /**
  * @swagger
  * /couple:
