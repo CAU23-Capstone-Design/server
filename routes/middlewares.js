@@ -26,22 +26,3 @@ module.exports = {
     }
   },
 };
-
-/**
- * 
- * router.get('/protected', verifyToken, async (req, res) => {
-  try {
-    // verifyToken 미들웨어를 통과한 후에는
-    // req.decoded 객체에 토큰에 담긴 정보가 들어있습니다.
-    const { couple_id, user_id } = req.decoded;
-
-    // 이곳에서 토큰이 유효한지 여부를 확인할 수 있습니다.
-    // ...
-
-    res.status(200).json({ message: 'Hello, world!' });
-  } catch (error) {
-    console.error(error);
-    next(error);
-  }
-});
- */

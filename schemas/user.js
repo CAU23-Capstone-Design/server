@@ -20,7 +20,7 @@ const userSchema = new Schema({
   },
   code: {
     type: String,
-//    unique: true,
+    unique: true,
   },
   createdAt: {
     type: Date,

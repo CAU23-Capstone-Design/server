@@ -2,333 +2,297 @@ const express = require('express');
 const User = require('../schemas/user');
 const Couple = require('../schemas/couple');
 const router = express.Router();
-const md5 = require('md5');
+const {verifyToken} = require('./middlewares');
+
+const crypto = require('crypto');
+
+function generateCoupleId() {
+  const randomValue = crypto.randomBytes(16).toString('hex');
+  return crypto.createHash('md5').update(randomValue).digest('hex');
+}
 
 /**
  * @swagger
  * components:
- *  schemas:
- *      Couple:
- *          type: object
- *          required:
- *           - couple_id
- *           - user1_id
- *           - user2_id
- *           - firstDate
- *          properties:
- *              couple_id:
- *                  type: string
- *                  description: 커플의 id (랜덤 값)
- *              user1_id:
- *                  type: string
- *                  description: 코드를 입력한 계정의 id
- *              user2_id:
- *                  type: string
- *                  description: 코드를 입력받은 계정의 id
- *              firstDate:
- *                  type: date
- *                  description: 처음만난 날
- *              createdAt:
- *                  type: date
- * 
- *          example:
- *              couple_id: 15027a3a71f40c3a55960ca1d6415587
- *              user1_id: 28015
- *              user2_id: 63452
- *              firstDate: 2023-03-16
- *              createdAt: 2023-03-16
- *              
+ *   schemas:
+ *     Couple:
+ *       type: object
+ *       properties:
+ *         couple_id:
+ *           type: string
+ *           example: "5f8d02461b56e7b29f53e4e7"
+ *           description: The unique identifier of the couple.
+ *         user1_id:
+ *           type: string
+ *           example: "12345678"
+ *           description: The unique identifier of the first user in the couple.
+ *         user2_id:
+ *           type: string
+ *           example: "87654321"
+ *           description: The unique identifier of the second user in the couple.
+ *         firstDate:
+ *           type: string
+ *           format: date
+ *           example: "2023-03-23"
+ *           description: The date of the couple's first meeting.
+ *         createdAt:
+ *           type: string
+ *           format: date
+ *           example: "2023-03-23T18:04:00Z"
+ *           description: The date when the couple was created.
+ *       required:
+ *         - couple_id
+ *         - user1_id
+ *         - user2_id
  */
-
 /**
- * @swagger
  * components:
- *  schemas:
- *      createCoupleInput:
- *          type: object
- *          required:
- *           - user1_id
- *           - code
- *           - firstDate
- *          properties:
- *              user1_id:
- *                  type: string
- *                  description: 요청하는 사용자의 카카오 회원번호
- *              code:
- *                  type: string
- *                  description: 상대방 사용자의 코드 번호
- *              firstDate:
- *                  type: date
- *                  description: 요청하는 사용자가 입력한 처음 만난 날
- * 
- *          example:
- *              user1_id: 28015
- *              code: 369712
- *              firstDate: 2023-03-16
- *              
+ *   schemas:
+ *     CoupleUpdate:
+ *       type: object
+ *       properties:
+ *         firstDate:
+ *           type: string
+ *           format: date
+ *           example: "2023-03-23"
+ *           description: The updated date of the couple's first meeting.
+ *       required:
+ *         - firstDate
  */
 
 /**
  * @swagger
- * /couples:
- *  get:
- *      summary: 전체 커플 정보 반환
- *      tags:
+ * /couple:
+ *   post:
+ *     summary: 새로운 커플을 생성
+ *     description: 두 명의 사용자를 짝지어서 새로운 커플을 생성한다. user_id가 담긴 jwtToken 정보와, 상대방의 code 정보가 필요하다.
+ *     tags:
  *       - Couple
- *      responses:
- *          200: 
- *              description: 전체 커플 정보
- *              content: 
- *                  application/json:
- *                      schema:
- *                          type: array
- *                          items: 
- *                              $ref: '#/components/schemas/Couple'
+ *     security:
+ *       - jwtToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 description: The unique code of the user to pair with
+ *                 example: "A1B2C3"
+ *               firstDate:
+ *                 type: string
+ *                 format: date-time
+ *                 description: The date of the couple's first meeting
+ *                 example: "2023-03-24T07:30:00.000Z"
+ *     responses:
+ *       201:
+ *         description: Successfully created couple
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Couple successfully created"
+ *                 token:
+ *                   type: string
+ *                   description: The JWT token with user, couple, and firstDate information
+ *       400:
+ *         description: Bad request, e.g., invalid code, users already in a couple, etc.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
  */
-router.get('/',async (req, res, next) => {
-    try {
-      const couples = await Couple.find({});
-      res.status(200).json(couples);
-    } catch (err) {
-      console.error(err);
-      next(err);
-    }
-});
-
-/**
- * @swagger
- * /couples/findByUserId:
- *  get:
- *      summary: 사용자 번호를 통해서 커플정보 찾기
- *      tags:
- *       - Couple
- *      parameters:
- *        - in: query
- *          name: userid
- *          schema:
- *            type: string
- *          required: false
- *      responses:
- *          200: 
- *              description: 전체 커플 정보
- *              content: 
- *                  application/json:
- *                      schema:
- *                          type: array
- *                          items: 
- *                              $ref: '#/components/schemas/Couple'
- */
-router.get('/findByUserId',async (req, res, next) => {
+router.post('/', verifyToken, async (req, res) => {
   try {
-    const couples = await Couple.findOne({'$or' : [{user1_id:req.query.userid},{user2_id:req.query.userid}]});
-    res.status(200).json(couples);
-  } catch (err) {
-    console.error(err);
-    next(err);
+    const { code,firstDate } = req.body;
+    const user1_id = req.user_id;
+
+    // Find the user with the provided code
+    const user2 = await User.findOne({ code });
+
+    if (!user2) {
+      return res.status(400).json({ message: 'User not found with the provided code' });
+    }
+
+    const user2_id = user2._id;
+
+    // Check if either user is already in a couple
+    const existingCouple1 = await Couple.findOne({ $or: [{ user1_id }, { user2_id: user1_id }] });
+    const existingCouple2 = await Couple.findOne({ $or: [{ user1_id: user2_id }, { user2_id }] });
+
+    if (existingCouple1 || existingCouple2) {
+      return res.status(400).json({ message: 'One or both users are already in a couple' });
+    }
+
+    // Create new couple
+    const couple_id = generateCoupleId();
+    const couple = new Couple({ couple_id, user1_id, user2_id, firstDate });
+    await couple.save();
+
+    // Generate new JWT with user and couple information
+    const payload = {
+      user_id: user1_id,
+      couple_id: couple.couple_id,
+      firstDate,
+    };
+    const newToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '60d' });
+
+    res.status(201).json({
+      message: 'Couple successfully created',
+      token: newToken,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 
-
 /**
  * @swagger
- * /couples:
- *  post:
- *      summary: 커플 정보 생성
- *      tags:
+ * /couple:
+ *   get:
+ *     summary: 커플 정보를 호출
+ *     description: couple_id가 담긴 jwtToken을 주면, 해당 커플 정보를 리턴한다.
+ *     tags:
  *       - Couple
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      $ref: '#/components/schemas/createCoupleInput'
- *      responses:
- *          201:
- *              description: 커플 정보 생성 성공
- *              content:
- *                  application/json:
- *                      schema:
- *                          $ref: '#/components/schemas/Couple'
- * 
+ *     security:
+ *       - jwtToken: []
+ *     responses:
+ *       200:
+ *         description: Couple information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Couple'
+ *       401:
+ *         description: Invalid token
+ *       404:
+ *         description: Couple not found
+ *       500:
+ *         description: Internal server error
  */
-router.post('/',async (req, res, next) => {
-    try {
-        const user1_id = req.body.user1_id;
-        const user2_id = await User.findOne({code: req.body.code});
-
-        if (user1_id == user2_id){
-          res.status(400).json({"error" : "user1 insert self code"});
-          return;
-        }
-
-        if(!user2_id){
-            res.status(400).json({"error":"wrong code"});
-            return;
-        }
-        
-        if( await Couple.exists({user1_id: user1_id})){
-            res.status(409).json({"error": "user1 already have couple code"});
-            return;
-        }
-
-        if( await Couple.exists({user2_id: user2_id})){
-            res.status(409).json({"error": "user2 already have couple code"});
-        }
-
-
-
-        const couple = await Couple.create({
-            couple_id: md5(Date.now()),
-            user1_id: user1_id,
-            user2_id: user2_id,
-            firstDate: req.body.firstDate,
-        });
-        console.log('couple created',couple);
-
-        // 커플 생성후 user1,user2의 코드 삭제
-        await User.findByIdAndUpdate(user1_id,{ $unset: {code:1} });
-        await User.findByIdAndUpdate(user2_id,{ $unset: {code:1} });
-        
-        res.status(201).json(couple);
-    } catch (err) {
-      console.error(err);
-      next(err);
-    }
-});
-
-
-
-/**
- * @swagger
- * /couples/{id}:
- *  get:
- *      summary: 커플번호가 {id}인 사용자 반환
- *      tags:
- *       - Couple
- *      parameters:
- *          - name: id
- *            in: path
- *            description: 커플 번호
- *            required: true
- *      responses:
- *          200: 
- *              description: 커플 정보
- *              content: 
- *                  application/json:
- *                      schema:
- *                          $ref: '#/components/schemas/Couple'
- */
-router.get('/:id', async (req, res, next) => {
+router.get('/', verifyToken, async (req, res) => {
   try {
-    const couple = await Couple.findOne({couple_id:req.params.id});
+    const couple_id = req.decoded.couple_id;
+    const couple = await Couple.findOne({ couple_id });
+
+    if (!couple) {
+      return res.status(404).json({ message: 'Couple not found' });
+    }
+
     res.json(couple);
-  } catch (err) {
-    console.error(err);
-    next(err);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 
 /**
  * @swagger
- * /couples/{id}:
- *  put:
- *      summary: 커플 정보 수정
- *      tags:
+ * /couple:
+ *   put:
+ *     summary: 커플 정보 수정
+ *     description: couple_id가 담긴 jwtToken을 주면, 해당 커플을 찾아서 정보를 수정한다.
+ *     tags:
  *       - Couple
- *      parameters:
- *          - in: path
- *            name: id
- *            schema:
- *              type: string
- *            required: true
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      $ref: '#/components/schemas/createCoupleInput'
- *      responses:
- *          200:
- *              description: 커플 정보 수정 성공
- *              content:
- *                  application/json:
- *                      schema:
- *                          $ref: '#/components/schemas/Couple'
- *          404:
- *              description: 해당 id의 커플 정보가 없음
- *          409:
- *              description: 이미 해당 사용자에게 커플 코드가 부여된 상태
+ *     security:
+ *       - jwtToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CoupleUpdate'
+ *     responses:
+ *       200:
+ *         description: Couple updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Couple'
+ *       401:
+ *         description: Invalid token
+ *       404:
+ *         description: Couple not found
+ *       500:
+ *         description: Internal server error
  */
-router.put('/:id', async (req, res, next) => {
+router.put('/', verifyToken, async (req, res) => {
   try {
-      const couple = await Couple.findById(req.params.id);
-      if (!couple) {
-          res.status(404).json({"error":"couple not found"});
-          return;
-      }
-      
-      const user1_id = req.body.user1_id;
-      const user2_id = await User.findOne({code: req.body.code});
-      if(!user2_id){
-          res.status(400).json({"error":"wrong code"});
-          return;
-      }
-      
-      if( await Couple.exists({user1_id: user1_id}) && couple.user1_id !== user1_id){
-          res.status(409).json({"error": "user1 already have couple code"});
-          return;
-      }
+    const couple_id = req.decoded.couple_id;
+    const updateData = req.body;
 
-      if( await Couple.exists({user2_id: user2_id}) && couple.user2_id !== user2_id){
-          res.status(409).json({"error": "user2 already have couple code"});
-          return;
-      }
+    const couple = await Couple.findOneAndUpdate(
+      { couple_id },
+      updateData,
+      { new: true }
+    );
 
-      couple.user1_id = user1_id;
-      couple.user2_id = user2_id;
-      couple.firstDate = req.body.firstDate;
-      await couple.save();
-      res.status(200).json(couple);
-  } catch (err) {
-      console.error(err);
-      next(err);
+    if (!couple) {
+      return res.status(404).json({ message: 'Couple not found' });
+    }
+
+    res.json({ message: 'Couple updated successfully', couple });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
 /**
-* @swagger
-* /couples/{id}:
-*  delete:
-*      summary: 커플 정보 삭제
-*      tags:
-*       - Couple
-*      parameters:
-*          - in: path
-*            name: id
-*            schema:
-*              type: string
-*            required: true
-*      responses:
-*          204:
-*              description: 커플 정보 삭제 성공
-*          404:
-*              description: 해당 id의 커플 정보가 없음
-*/
-router.delete('/:id', async (req, res, next) => {
+ * @swagger
+ * /couple:
+ *   delete:
+ *     summary: 커플 정보 삭제
+ *     description: couple_id가 담긴 jwtToken을 주면, 해당 커플 정보를 삭제한다.
+ *     tags:
+ *       - Couple
+ *     security:
+ *       - jwtToken: []
+ *     responses:
+ *       200:
+ *         description: Couple deleted successfully
+ *       401:
+ *         description: Invalid token
+ *       404:
+ *         description: Couple not found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete('/', verifyToken, async (req, res) => {
   try {
-      const couple = await Couple.findOneAndDelete({couple_id:req.params.id});
-//      const couple = await Couple.findByIdAndDelete(req.params.id);
-      if (!couple) {
-          res.status(404).json({"error":"couple not found"});
-          return;
-      }
-      res.sendStatus(204);
-  } catch (err) {
-      console.error(err);
-      next(err);
+    const couple_id = req.decoded.couple_id;
+
+    const couple = await Couple.findOneAndDelete({ couple_id });
+
+    if (!couple) {
+      return res.status(404).json({ message: 'Couple not found' });
+    }
+
+    res.json({ message: 'Couple deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 module.exports = router;

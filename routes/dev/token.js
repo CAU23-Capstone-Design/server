@@ -1,9 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const Couple = require('../schemas/couple');
+const Couple = require('../..//schemas/couple');
 require('dotenv').config();
 
-const { verifyToken } = require('./middlewares');
+const { verifyToken } = require('../middlewares');
 
 const router = express.Router();
 
@@ -25,11 +25,11 @@ const router = express.Router();
 
 /**
  * @swagger
- * /token:
+ * /dev/token:
  *  post:
  *      summary: 토큰 생성
  *      tags:
- *       - Token
+ *       - Dev
  *      requestBody:
  *          required: true
  *          content:
@@ -84,11 +84,11 @@ router.post('/', async (req,res) => {
 
 /**
  * @swagger
- * /token/test:
+ * /dev/token/test:
  *   get:
  *     summary: JWT 토큰 검증
  *     tags:
- *       - Token
+ *       - Dev
  *     security:
  *       - jwtToken: []
  *     responses:

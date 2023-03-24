@@ -8,12 +8,17 @@ const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const md5 = require('md5')
 
+// 실 서비스 라우터들
 const imagesRouter = require('./routes/images');
 const loginRouter = require('./routes/login');
-const usersRouter = require('./routes/users');
 const couplesRouter = require('./routes/couples')
-const tokenRouter = require('./routes/token');
 const gpsRouter = require('./routes/gps');
+
+// 개발용 라우터들
+const devUserRouter = require('./routes/dev/users');
+const devCoupleRouter = require('./routes/dev/couples');
+const devTokenRouter = require('./routes/dev/token');
+
 dotenv.config();
 const app = express();
 app.set('port',process.env.PORT || 3000);
@@ -41,7 +46,7 @@ const options = {
             }
         ],
     },
-    apis: ["./routes/*.js"]
+    apis: ["./routes/*.js","./routes/dev/*.js"]
 }
 
 
@@ -50,12 +55,17 @@ const specs = swaggerJsDoc(options)
 app.use('/api-docs',swaggerUI.serve,swaggerUI.setup(specs))
 app.use(morgan('dev'));
 app.use(express.json())
-app.use('/users',usersRouter);
+
+// 서비스용 라우터
 app.use('/couples',couplesRouter);
-app.use('/token', tokenRouter);
 app.use('/gps',gpsRouter);
 app.use('/images', imagesRouter);
 app.use('/login', loginRouter);
+
+// 개발용 라우터
+app.use('/dev/user',devUserRouter);
+app.use('/dev/couple',devCoupleRouter);
+app.use('/dev/token',devTokenRouter);
 
 
 app.use((req, res, next) => {
