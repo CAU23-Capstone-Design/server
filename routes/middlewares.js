@@ -14,6 +14,7 @@ module.exports = {
             res.status(401).json({ error: 'Invalid token' });
           } else {
             req.decoded = decoded;
+            console.log('JWT Decoded',decoded);
             next();
           }
         });
