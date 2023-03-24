@@ -3,6 +3,7 @@ const User = require('../schemas/user');
 const Couple = require('../schemas/couple');
 const router = express.Router();
 const {verifyToken} = require('./middlewares');
+const jwt = require('jsonwebtoken');
 
 const crypto = require('crypto');
 
@@ -122,7 +123,8 @@ function generateCoupleId() {
 router.post('/', verifyToken, async (req, res) => {
   try {
     const { code,firstDate } = req.body;
-    const user1_id = req.user_id;
+    const user1_id = req.decoded.user._id;
+    console.log(user1_id);
 
     // Find the user with the provided code
     const user2 = await User.findOne({ code });
@@ -156,7 +158,7 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(201).json({
       message: 'Couple successfully created',
       token: newToken,
-    });
+    }); 
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
