@@ -89,13 +89,20 @@ router.post('/', async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 code: user.code,
+                birthday : user.birthday,
+                gender : user.gender
             },
             couple: null,
         };
 
         if (couple) {
             // If a couple is found, add couple_id to the JWT payload
-            jwtPayload.couple = { couple_id: couple.couple_id };
+            jwtPayload.couple = { 
+                couple_id: couple.couple_id,
+                user1_id : couple.user1_id,
+                user2_id : couple.user2_id,
+                firstDate : couple.firstDate
+            };
         }
 
         // Sign and return JWT token
@@ -191,13 +198,20 @@ router.post('/test', async (req, res) => {
                 _id: user._id,
                 name: user.name,
                 code: user.code,
+                birthday : user.birthday,
+                gender : user.gender
             },
             couple: null,
         };
 
         if (couple) {
             // If a couple is found, add couple_id to the JWT payload
-            jwtPayload.couple = { couple_id: couple.couple_id };
+            jwtPayload.couple = { 
+                couple_id: couple.couple_id,
+                user1_id : couple.user1_id,
+                user2_id : couple.user2_id,
+                firstDate : couple.firstDate
+            };
         }
 
         // Sign and return JWT token

@@ -6,6 +6,7 @@ const {verifyToken} = require('./middlewares');
 const jwt = require('jsonwebtoken');
 
 const crypto = require('crypto');
+const user = require('../schemas/user');
 
 function generateCoupleId() {
   const randomValue = crypto.randomBytes(16).toString('hex');
@@ -126,6 +127,8 @@ router.post('/', verifyToken, async (req, res) => {
     const user1_id = req.decoded.user._id;
     console.log(user1_id);
 
+    // user1
+    const user1 = await User.findOne({ _id: req.decoded.user._id});
     // Find the user with the provided code
     const user2 = await User.findOne({ code });
 
@@ -149,11 +152,23 @@ router.post('/', verifyToken, async (req, res) => {
     await couple.save();
 
     // Generate new JWT with user and couple information
-    const payload = {
-      user_id: user1_id,
-      couple_id: couple.couple_id,
-    };
-    const newToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '60d' });
+    const jwtPayload = {
+      user: {
+        _id : user1._id,
+        name: user1.name,
+        code: user1.code,
+        birthday: user1.birthday,
+        gender: user1.gender
+      },
+      couple:{
+        couple_id: couple.couple_id,
+        user1_id : couple.user1_id,
+        user2_id : couple.user2_id,
+        firstDate: couple.firstDate
+      }
+    }
+
+    const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
 
     res.status(201).json({
       message: 'Couple successfully created',
@@ -213,6 +228,7 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/', verifyToken, async (req, res) => {
   try {
     const user1_id = req.decoded.user_id;
+    const user1 = await User.findOne({ _id: req.decoded.user._id});
     const couple = await Couple.findOne({ $or: [{ user1_id }, { user2_id: user1_id }] });
 
     if (!couple) {
@@ -220,11 +236,23 @@ router.get('/', verifyToken, async (req, res) => {
     }
 
     // Generate new JWT with user and couple information
-    const payload = {
-      user_id: user1_id,
-      couple_id: couple.couple_id,
-    };
-    const newToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '60d' });
+    const jwtPayload = {
+      user: {
+        _id : user1._id,
+        name: user1.name,
+        code: user1.code,
+        birthday: user1.birthday,
+        gender: user1.gender
+      },
+      couple:{
+        couple_id: couple.couple_id,
+        user1_id : couple.user1_id,
+        user2_id : couple.user2_id,
+        firstDate: couple.firstDate
+      }
+    }
+
+    const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
 
     res.status(200).json({
       message: 'Couple found',

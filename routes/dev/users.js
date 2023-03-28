@@ -100,8 +100,8 @@ const User = require("../../schemas/user");
  *           description: 성별
  *         code:
  *           type: string
- *           example: "ABCD1234"
- *           description: 8자리의 커플 동기화용 코드
+ *           example: "ABCD12"
+ *           description: 6자리의 커플 동기화용 코드
  *         createdAt:
  *           type: string
  *           format: date-time
