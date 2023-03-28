@@ -227,7 +227,7 @@ router.post('/', verifyToken, async (req, res) => {
  */
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const user1_id = req.decoded.user_id;
+    const user1_id = req.decoded.user._id;
     const user1 = await User.findOne({ _id: req.decoded.user._id});
     const couple = await Couple.findOne({ $or: [{ user1_id }, { user2_id: user1_id }] });
 
