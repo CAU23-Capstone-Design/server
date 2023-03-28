@@ -64,7 +64,7 @@ function generateCoupleId() {
 
 /**
  * @swagger
- * /couple:
+ * /couples:
  *   post:
  *     summary: 새로운 커플을 생성 및 토큰 발행
  *     description: 두 명의 사용자를 짝지어서 새로운 커플을 생성한다. user_id가 담긴 jwtToken 정보와, 상대방의 code 정보가 필요하다.
@@ -183,7 +183,7 @@ router.post('/', verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /couple:
+ * /couples:
  *   get:
  *     summary: 로그인한 사용자 정보를 토대로 커플 정보가 담긴 토큰 발행
  *     tags:
@@ -265,7 +265,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 /**
  * @swagger
- * /couple:
+ * /couples:
  *   put:
  *     summary: 커플 정보 수정
  *     description: couple_id가 담긴 jwtToken을 주면, 해당 커플을 찾아서 정보를 수정한다.
@@ -317,7 +317,7 @@ router.put('/', verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /couple:
+ * /couples:
  *   delete:
  *     summary: 커플 정보 삭제
  *     description: couple_id가 담긴 jwtToken을 주면, 해당 커플 정보를 삭제한다.

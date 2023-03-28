@@ -68,12 +68,26 @@ router.post('/', async (req,res) => {
             return;
         }
 
-        const token = jwt.sign({couple_id,user_id},process.env.JWT_SECRET,{
-            expiresIn: '180d',
-            issuer:'lovestory'
-        });
+        const jwtPayload = {
+            user: {
+              _id : user1._id,
+              name: user1.name,
+              code: user1.code,
+              birthday: user1.birthday,
+              gender: user1.gender
+            },
+            couple:{
+              couple_id: couple.couple_id,
+              user1_id : couple.user1_id,
+              user2_id : couple.user2_id,
+              firstDate: couple.firstDate
+            }
+          }
+      
+          const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
+      
 
-        return res.status(201).json({token})
+        return res.status(201).json({newToken})
     } catch(error){
         console.error(error);
         next(error);
