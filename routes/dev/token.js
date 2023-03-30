@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const Couple = require('../..//schemas/couple');
+const User = require('../../schemas/user');
 require('dotenv').config();
 const Token = require('../../schemas/tokens');
 const { verifyToken } = require('../middlewares');
@@ -128,6 +129,7 @@ router.post('/', async (req,res) => {
             res.status(400).json({"error":"Invalid couple_id or user_id"});
             return;
         }
+        const user1 = await User.findOne({_id:user_id});
 
         const jwtPayload = {
             user: {
@@ -146,7 +148,12 @@ router.post('/', async (req,res) => {
           }
       
           const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
-      
+          Token.create({
+            user_id: user1._id,
+            user_name: user1.name,
+            couple_id: couple.couple_id,
+            token: newToken
+          });
 
         return res.status(201).json({newToken})
     } catch(error){
