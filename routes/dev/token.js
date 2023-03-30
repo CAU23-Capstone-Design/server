@@ -2,7 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const Couple = require('../..//schemas/couple');
 require('dotenv').config();
-
+const Token = require('../../schemas/tokens');
 const { verifyToken } = require('../middlewares');
 
 const router = express.Router();
@@ -21,6 +21,67 @@ const router = express.Router();
  *  - jwtToken: []
  */
 
+/**
+ * @swagger
+ * components:
+ *  schemas:
+ *      Token:
+ *          type: object
+ *          properties:
+ *              _id:
+ *                  type: string
+ *                  example: 617d5d5e5b5e5e5f5f5e5e5d
+ *              user_id:
+ *                  type: string
+ *                  example: "270189654"
+ *              couple_id:
+ *                  type: string
+ *                  example: "2d61bee99121f226661d03bd96e97a43"
+ *              token:
+ *                  type: string
+ *                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ
+*/
+
+/**
+ * @swagger
+ * /dev/token:
+ *  get:
+ *      summary: Retrieve all tokens
+ *      tags:
+ *       - Dev
+ *      security:
+ *       - jwtToken: []
+ *      responses:
+ *          200:
+ *              description: Successfully retrieved tokens
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: array
+ *                          items:
+ *                              $ref: '#/components/schemas/Token'
+ *          500:
+ *              description: Error retrieving tokens
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: object
+ *                          properties:
+ *                              error:
+ *                                  type: string
+ *                          example:
+ *                              error: Error retrieving tokens
+ */
+
+// GET: Retrieve all tokens
+router.get('/', async (req, res) => {
+  try {
+    const tokens = await Token.find();
+    res.json(tokens);
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving tokens' });
+  }
+});
 
 
 /**
