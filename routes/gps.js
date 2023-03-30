@@ -91,8 +91,8 @@ router.post('/',verifyToken, async (req, res, next) => {
   try {
     console.log('post /gps');
     const { latitude, longitude } = req.body;
-    const { user_id } = req.decoded;
-    console.log(latitude, longitude, user_id);
+    const user_id = req.decoded.user._id;
+    console.log('요청 GPS : ', latitude, longitude, user_id);
     const gpsData = await Gps.create({
       user_id,
       latitude,
@@ -140,7 +140,7 @@ router.post('/',verifyToken, async (req, res, next) => {
 
 router.get('/check-nearby',verifyToken, async (req, res, next) => {
   try {
-    const { user_id } = req.decoded;
+    const user_id = req.decoded.user._id;
     const user = await User.findById(user_id);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
