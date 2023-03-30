@@ -14,6 +14,7 @@ const loginRouter = require('./routes/login');
 const couplesRouter = require('./routes/couples')
 const gpsRouter = require('./routes/gps');
 const usersRouter = require('./routes/users');
+const memosRouter = require('./routes/memo');
 
 // 개발용 라우터들
 const devUserRouter = require('./routes/dev/users');
@@ -63,6 +64,8 @@ app.use('/gps',gpsRouter);
 app.use('/images', imagesRouter);
 app.use('/login', loginRouter);
 app.use('/users',usersRouter);
+app.use('/memos',memosRouter);
+
 // 개발용 라우터
 app.use('/dev/user',devUserRouter);
 app.use('/dev/couple',devCoupleRouter);
