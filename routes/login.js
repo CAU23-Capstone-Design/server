@@ -106,7 +106,7 @@ router.post('/', async (req, res) => {
         }
 
         // Sign and return JWT token
-        const token = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
 
         res.status(200).json({
             success: true,
@@ -215,7 +215,7 @@ router.post('/test', async (req, res) => {
         }
 
         // Sign and return JWT token
-        const token = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
 
         res.status(200).json({
             success: true,
