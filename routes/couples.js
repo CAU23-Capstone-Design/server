@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../schemas/user');
 const Couple = require('../schemas/couple');
+const Token = require('../schemas/tokens');
 const router = express.Router();
 const {verifyToken} = require('./middlewares');
 const jwt = require('jsonwebtoken');
@@ -169,6 +170,11 @@ router.post('/', verifyToken, async (req, res) => {
     }
 
     const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
+    Token.create({
+      user_id: user1._id,
+      couple_id: couple.couple_id,
+      token: newToken
+    })
 
     res.status(201).json({
       message: 'Couple successfully created',
