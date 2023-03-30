@@ -172,6 +172,7 @@ router.post('/', verifyToken, async (req, res) => {
     const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
     Token.create({
       user_id: user1._id,
+      user_name: user1._name,
       couple_id: couple.couple_id,
       token: newToken
     })
@@ -259,6 +260,13 @@ router.get('/', verifyToken, async (req, res) => {
     }
 
     const newToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '180d' });
+
+    Token.create({
+      user_id: user1._id,
+      user_name: user1.name,
+      couple_id: couple.couple_id,
+      token: newToken
+    })
 
     res.status(200).json({
       message: 'Couple found',
