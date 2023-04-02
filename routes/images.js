@@ -11,7 +11,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.diskStorage({
     destination(req, file, cb) {
-      const coupleDir = path.join(__dirname, '..', 'uploads', req.decoded.couple_id);
+      const coupleDir = path.join(__dirname, '..', 'uploads', req.decoded.couple.couple_id);
       if (!fs.existsSync(coupleDir)) {
         fs.mkdirSync(coupleDir, { recursive: true });
       }
@@ -94,9 +94,11 @@ router.use(verifyToken);
  */
 router.post('/', upload.single('image'), async (req, res, next) => {
   try {
-    const { couple_id, user_id } = req.decoded;
-    const { local_id } = req.body;
+    const couple_id = req.decoded.couple.couple_id;
+    const user_id = req.decoded.user._id;
+
     const { originalname, filename } = req.file;
+    /*
 
     const image = await Image.create({
       image_id: `${couple_id}_${Date.now()}`,
@@ -106,8 +108,12 @@ router.post('/', upload.single('image'), async (req, res, next) => {
       original_name: originalname,
       server_file_name: filename,
     });
+    */
+    console.log(req.file);
+    console.log(req.body);
+    console.log(req.decoded);
 
-    res.status(201).json(image);
+    res.status(201).json({'message' : 'merrong'});
   } catch (error) {
     console.error(error);
     next(error);
