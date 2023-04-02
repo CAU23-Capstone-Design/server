@@ -199,13 +199,38 @@ router.put('/:memoId', verifyToken, async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *         example: 64288a7563afd02dcd0f4357
  *     responses:
  *       200:
  *         description: Memo deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Memo deleted successfully
  *       400:
  *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid request
  *       500:
  *         description: Error deleting memo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error deleting memo
  */
 router.delete('/memoid/:memoId', verifyToken, async (req, res) => {
   const memoId = req.params.memoId;
@@ -237,13 +262,41 @@ router.delete('/memoid/:memoId', verifyToken, async (req, res) => {
  *         schema:
  *           type: string
  *           format: date
+ *         example: '2023-04-02'
  *     responses:
  *       200:
  *         description: Memos deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Memos deleted successfully
  *       400:
  *         description: Invalid request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid request
  *       500:
  *         description: Error deleting memos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Error deleting memos
+ *       examples:
+ *         'application/json':
+ *           message: Memos deleted successfully
  */
 router.delete('/date/:date', verifyToken, async (req, res) => {
   const date = req.params.date;
