@@ -122,4 +122,155 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /memos/{memoId}:
+ *   put:
+ *     summary: 메모 수정
+ *     tags: [memos]
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: path
+ *         name: memoId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               content:
+ *                 type: string
+ *                 description: The updated content of the memo
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 description: The updated date of the memo
+ *             required:
+ *               - content
+ *               - date
+ *     responses:
+ *       200:
+ *         description: Memo updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Memo'
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Error updating memo
+ */
+router.put('/:memoId', verifyToken, async (req, res) => {
+  const { content, date } = req.body;
+  const memoId = req.params.memoId;
+
+  try {
+    const updatedMemo = await Memo.findByIdAndUpdate(
+      memoId,
+      { content, date },
+      { new: true }
+    );
+    if (updatedMemo) {
+      res.status(200).json(updatedMemo);
+    } else {
+      res.status(400).json({ error: 'Invalid request' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating memo' });
+  }
+});
+
+/**
+ * @swagger
+ * /memos/memoid/{memoId}:
+ *   delete:
+ *     summary: 메모 삭제 (memoid로 삭제)
+ *     tags: [memos]
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: path
+ *         name: memoId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Memo deleted successfully
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Error deleting memo
+ */
+router.delete('/memoid/:memoId', verifyToken, async (req, res) => {
+  const memoId = req.params.memoId;
+
+  try {
+    const deletedMemo = await Memo.findByIdAndDelete(memoId);
+    if (deletedMemo) {
+      res.status(200).json({ message: 'Memo deleted successfully' });
+    } else {
+      res.status(400).json({ error: 'Invalid request' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting memo' });
+  }
+});
+
+/**
+ * @swagger
+ * /memos/date/{date}:
+ *   delete:
+ *     summary: 메모 삭제 (날짜로 삭제)
+ *     tags: [memos]
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: path
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Memos deleted successfully
+ *       400:
+ *         description: Invalid request
+ *       500:
+ *         description: Error deleting memos
+ */
+router.delete('/date/:date', verifyToken, async (req, res) => {
+  const date = req.params.date;
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const targetDate = new Date(date);
+    const nextDate = new Date(targetDate);
+    nextDate.setDate(targetDate.getDate() + 1);
+
+    const deletedMemos = await Memo.deleteMany({
+      couple_id,
+      date: {
+        $gte: targetDate,
+        $lt: nextDate,
+      },
+    });
+
+    if (deletedMemos) {
+      res.status(200).json({ message: 'Memos deleted successfully' });
+    } else {
+      res.status(400).json({ error: 'Invalid request' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting memos' });
+  }
+});
+
+
 module.exports = router;
