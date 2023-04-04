@@ -124,7 +124,7 @@ router.get('/', verifyToken, async (req, res) => {
 
 /**
  * @swagger
- * /memos/{memoId}:
+ * /memos/{date}:
  *   put:
  *     summary: 메모 수정
  *     tags: [memos]
@@ -132,10 +132,11 @@ router.get('/', verifyToken, async (req, res) => {
  *       - jwtToken: []
  *     parameters:
  *       - in: path
- *         name: memoId
+ *         name: date
  *         required: true
  *         schema:
  *           type: string
+ *           format: date
  *     requestBody:
  *       required: true
  *       content:
@@ -146,13 +147,8 @@ router.get('/', verifyToken, async (req, res) => {
  *               content:
  *                 type: string
  *                 description: The updated content of the memo
- *               date:
- *                 type: string
- *                 format: date
- *                 description: The updated date of the memo
  *             required:
  *               - content
- *               - date
  *     responses:
  *       200:
  *         description: Memo updated successfully
@@ -165,14 +161,15 @@ router.get('/', verifyToken, async (req, res) => {
  *       500:
  *         description: Error updating memo
  */
-router.put('/:memoId', verifyToken, async (req, res) => {
-  const { content, date } = req.body;
-  const memoId = req.params.memoId;
+router.put('/:date', verifyToken, async (req, res) => {
+  const { content } = req.body;
+  const date = req.params.date;
+  const couple_id = req.decoded.couple.couple_id;
 
   try {
-    const updatedMemo = await Memo.findByIdAndUpdate(
-      memoId,
-      { content, date },
+    const updatedMemo = await Memo.findOneAndUpdate(
+      { couple_id, date },
+      { content },
       { new: true }
     );
     if (updatedMemo) {
