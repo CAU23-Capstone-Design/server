@@ -144,7 +144,7 @@ const getGeoLocation = async (longitude, latitude) => {
  */
 
 router.post('/', verifyToken, upload.single('image'), async (req, res) => {
-  const { local_id } = req.body;
+  const local_id = req.body.local_id.replace(/"/g, '');
   const couple_id = req.decoded.couple.couple_id;
   const user_id = req.decoded.user._id;
 
