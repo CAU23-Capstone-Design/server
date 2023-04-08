@@ -13,6 +13,7 @@ const imageSchema = new Schema({
   local_id: {
     type: String,
     required: true,
+    unique: true,
   },
   image_url: {
     type: String,

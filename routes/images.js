@@ -148,6 +148,11 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
   const couple_id = req.decoded.couple.couple_id;
   const user_id = req.decoded.user._id;
 
+  const existingImage = await Image.findOne({ local_id });
+  if (existingImage) {
+    return res.status(400).json({ error: 'local_id must be unique' });
+  }
+
   try {
     console.log('req.file : ', req.file);
 
