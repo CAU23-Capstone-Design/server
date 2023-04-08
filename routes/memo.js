@@ -122,11 +122,56 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * paths:
+ *   /memos/{date}:
+ *     get:
+ *       security:
+ *         - jwtToken: []
+ *       summary: 특정 날짜의 메모 확인
+ *       tags: [memos]
+ *       parameters:
+ *         - in: path
+ *           name: date
+ *           required: true
+ *           schema:
+ *             type: string
+ *             format: date
+ *       responses:
+ *         '200':
+ *           description: A memo associated with the couple for the specified date
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/Memo'
+ *         '401':
+ *           description: Unauthorized access
+ *         '500':
+ *           description: Internal server error
+ */
+router.get('/:date', verifyToken, async (req, res) => {
+  const date = req.params.date;
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const memo = await Memo.findOne({ couple_id, date });
+    if (memo) {
+      res.status(200).json(memo);
+    } else {
+      res.status(404).json({ error: 'Memo not found for the specified date' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Error retrieving memo' });
+  }
+});
+
 /**
  * @swagger
  * /memos/{date}:
  *   put:
- *     summary: 메모 수정
+ *     summary: 메모 수정 또는 생성
  *     tags: [memos]
  *     security:
  *       - jwtToken: []
@@ -146,7 +191,7 @@ router.get('/', verifyToken, async (req, res) => {
  *             properties:
  *               content:
  *                 type: string
- *                 description: The updated content of the memo
+ *                 description: The content of the memo
  *             required:
  *               - content
  *     responses:
@@ -156,10 +201,16 @@ router.get('/', verifyToken, async (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Memo'
+ *       201:
+ *         description: Memo created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Memo'
  *       400:
  *         description: Invalid request
  *       500:
- *         description: Error updating memo
+ *         description: Error updating or creating memo
  */
 router.put('/:date', verifyToken, async (req, res) => {
   const { content } = req.body;
@@ -167,18 +218,21 @@ router.put('/:date', verifyToken, async (req, res) => {
   const couple_id = req.decoded.couple.couple_id;
 
   try {
-    const updatedMemo = await Memo.findOneAndUpdate(
+    let updatedMemo = await Memo.findOneAndUpdate(
       { couple_id, date },
       { content },
       { new: true }
     );
+
     if (updatedMemo) {
       res.status(200).json(updatedMemo);
     } else {
-      res.status(400).json({ error: 'Invalid request' });
+      const newMemo = new Memo({ couple_id, date, content });
+      await newMemo.save();
+      res.status(201).json(newMemo);
     }
   } catch (error) {
-    res.status(500).json({ error: 'Error updating memo' });
+    res.status(500).json({ error: 'Error updating or creating memo' });
   }
 });
 

@@ -89,10 +89,9 @@ const getDistanceBetweenPoints = (lat1, lon1, lat2, lon2) => {
 */
 router.post('/',verifyToken, async (req, res, next) => {
   try {
-    console.log('post /gps 진입');
+
     const { latitude, longitude } = req.body;
     const user_id = req.decoded.user._id;
-    console.log('요청 GPS : ', latitude, longitude, user_id);
     const gpsData = await Gps.create({
       user_id,
       latitude,
