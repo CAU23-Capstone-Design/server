@@ -3,3 +3,4 @@ uploads
 .foreverignore
 current.log
 .env
+start.sh
