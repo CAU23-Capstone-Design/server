@@ -20,8 +20,18 @@ const imageSchema = new Schema({
     required: true,
   },
   location: {
-    type: String,
-    required: true,
+    area1: {
+      type: String,
+      required: true,
+    },
+    area2: {
+      type: String,
+      required: true,
+    },
+    area3: {
+      type: String,
+      required: true,
+    },
   },
   date: {
     type: String,

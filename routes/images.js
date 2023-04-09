@@ -15,6 +15,20 @@ dotenv.config();
 const base64Key = process.env.AES_SECRET_KEY;
 const secretKey = Buffer.from(base64Key, 'base64');
 
+function getTimestamp() {
+  const date = new Date();
+
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 두 자리로 만들기
+  const day = date.getDate().toString().padStart(2, '0'); // 두 자리로 만들기
+  const hour = date.getHours().toString().padStart(2, '0'); // 두 자리로 만들기
+  const minute = date.getMinutes().toString().padStart(2, '0'); // 두 자리로 만들기
+  const second = date.getSeconds().toString().padStart(2, '0'); // 두 자리로 만들기
+
+  const timestamp = `${year}${month}${day}${hour}${minute}${second}`;
+
+  return timestamp;
+}
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -27,7 +41,7 @@ const upload = multer({
     },
     filename(req, file, cb) {
       // Get current timestamp and append it to the file name
-      const timestamp = Date.now();
+      const timestamp = getTimestamp()
       const filename = `${file.fieldname}-${timestamp}-${file.originalname}`;
       cb(null, filename);
     },
@@ -63,13 +77,18 @@ const getGeoLocation = async (longitude, latitude) => {
     };
 
     const response = await axios.get(naverApiUrl, { headers });
-    const location = response.data.results[0].region.area1.name + ' ' + response.data.results[0].region.area2.name + ' ' + response.data.results[0].region.area3.name;
-    return location;
+    const area1 = response.data.results[0].region.area1.name;
+    const area2 = response.data.results[0].region.area2.name;
+    const area3 = response.data.results[0].region.area3.name;
+
+    return { 'area1' : area1, 'area2': area2, 'area3':area3 };
   } catch (error) {
     console.error(error);
-    return '';
+    return {};
   }
 };
+
+
 
 /**
  * @swagger
@@ -103,8 +122,17 @@ const getGeoLocation = async (longitude, latitude) => {
  *           format: date
  *           description: 이미지 촬영 날짜
  *         location:
- *           type: string
- *           description: 이미지 촬영 위치
+ *           type: object
+ *           properties:
+ *             area1:
+ *               type: string
+ *               description: 서울특별시
+ *             area2:
+ *               type: string
+ *               description: 은평구
+ *             area3:
+ *               type: string
+ *               description: 응암1동
  *         latitude:
  *           type: number
  *           description: 이미지 촬영 위도
@@ -150,28 +178,38 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
 
   const existingImage = await Image.findOne({ local_id });
   if (existingImage) {
+    cosole.error('local_id must be unique')
     return res.status(400).json({ error: 'local_id must be unique' });
   }
 
   try {
-    console.log('req.file : ', req.file);
-
     // 이미지 암호화
     const metadata = await exifr.parse(req.file.path);
+
     const date = metadata.DateTimeOriginal.toISOString().split('T')[0];
     const latitude = metadata.latitude;
     const longitude = metadata.longitude;
 
-    const location = await getGeoLocation(longitude, latitude);    
+    console.time("naver_map_api_call");
+    // api 호출(네이버 맵)
+    const location = await getGeoLocation(longitude, latitude);
+    console.timeEnd("naver_map_api_call");
+    console.log(location);
+
+    console.time("image_encryption");
+    // 이미지 저장    
     const imageBuffer = await fs.promises.readFile(req.file.path);
     const { iv, encrypted } = encryptImage(imageBuffer, secretKey);
+    console.timeEnd("image_encryption");
+
 
     // 암호화된 이미지 저장
     const encryptedImagePath = path.join(path.dirname(req.file.path), 'encrypted_' + req.file.filename);
-    await fs.promises.writeFile(encryptedImagePath, Buffer.concat([iv, encrypted]));
+    fs.promises.writeFile(encryptedImagePath, Buffer.concat([iv, encrypted]));
+
 
     // 원본 이미지 삭제
-    await fs.promises.unlink(req.file.path);
+    fs.promises.unlink(req.file.path);
 
     const newImage = new Image({
       couple_id,
@@ -288,6 +326,154 @@ router.get('/:local_id', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Error downloading image' });
   }
 });
+
+/**
+ * @swagger
+ * /images/{local_id}/info:
+ *   get:
+ *     summary: 이미지 정보 가져오기
+ *     tags:
+ *       - Images
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: path
+ *         name: local_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 이미지 정보 성공적으로 가져옴
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Image'
+ *       404:
+ *         description: 이미지를 찾을 수 없음
+ *       500:
+ *         description: 이미지 정보 가져오는 중 오류 발생
+ */
+router.get('/:local_id/info', verifyToken, async (req, res) => {
+  const local_id = req.params.local_id;
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const image = await Image.findOne({ couple_id, local_id });
+
+    if (!image) {
+      res.status(404).json({ error: 'Image not found' });
+      return;
+    }
+
+    res.status(200).json(image);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error fetching image information' });
+  }
+});
+
+/**
+ * @swagger
+ * /images/{local_id}:
+ *   delete:
+ *     summary: 이미지 삭제
+ *     tags:
+ *       - Images
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: path
+ *         name: local_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 이미지 삭제 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Image deleted successfully"
+ *       404:
+ *         description: 이미지를 찾을 수 없음
+ *       500:
+ *         description: 이미지 삭제 중 오류 발생
+ */
+router.delete('/:local_id', verifyToken, async (req, res) => {
+  const local_id = req.params.local_id;
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const image = await Image.findOne({ couple_id, local_id });
+
+    if (!image) {
+      res.status(404).json({ error: 'Image not found' });
+      return;
+    }
+
+    // 이미지 파일 삭제
+    await fs.promises.unlink(image.image_url);
+
+    // DB에서 이미지 정보 삭제
+    await Image.deleteOne({ couple_id, local_id });
+
+    res.status(200).json({ message: 'Image deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error deleting image' });
+  }
+});
+
+/**
+ * @swagger
+ * /images:
+ *   delete:
+ *     summary: 커플의 모든 이미지 삭제
+ *     tags:
+ *       - Images
+ *     security:
+ *       - jwtToken: []
+ *     responses:
+ *       200:
+ *         description: 커플의 모든 이미지 삭제 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "All images deleted successfully"
+ *       500:
+ *         description: 이미지 삭제 중 오류 발생
+ */
+router.delete('/', verifyToken, async (req, res) => {
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const images = await Image.find({ couple_id });
+
+    // 이미지 파일들 삭제
+    for (const image of images) {
+      await fs.promises.unlink(image.image_url);
+    }
+
+    // DB에서 이미지 정보들 삭제
+    await Image.deleteMany({ couple_id });
+
+    res.status(200).json({ message: 'All images deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error deleting images' });
+  }
+});
+
+
 
 
 
