@@ -8,11 +8,6 @@ pipeline {
                 sh 'npm install'
             }
         }
-        stage('Install PM2') {
-            steps {
-                sh 'npm install pm2'
-            }
-        }
         stage('Prepare .env file') {
             steps {
                 withCredentials([string(credentialsId: 'my_env_file', variable: 'ENV_CONTENTS')]) {
