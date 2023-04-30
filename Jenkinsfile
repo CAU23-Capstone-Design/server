@@ -2,6 +2,9 @@ pipeline {
     agent {
         label 'ubuntu_agent'
     }
+    environment {
+        PATH = "/home/ubuntu/.nvm/versions/node/v18.14.2/bin:${env.PATH}"
+    }
     stages {
         stage('Set up nvm and select node/npm version') {
             steps {
