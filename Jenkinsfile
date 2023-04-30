@@ -16,8 +16,8 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                sh 'pm2 stop your_app_name || true'
-                sh 'pm2 start app.js --name your_app_name'
+                sh 'pm2 stop lovestory || true'
+                sh 'pm2 start app.js --name lovestory'
             }
         }
     }
