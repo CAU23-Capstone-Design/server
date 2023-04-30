@@ -7,6 +7,8 @@ const connect = require('./schemas');
 const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const md5 = require('md5')
+const https = require('https');
+const fs = require('fs');
 
 // 실 서비스 라우터들
 const imagesRouter = require('./routes/images');
@@ -20,6 +22,7 @@ const memosRouter = require('./routes/memo');
 const devUserRouter = require('./routes/dev/users');
 const devCoupleRouter = require('./routes/dev/couples');
 const devTokenRouter = require('./routes/dev/token');
+const devLogRouter = require('./routes/dev/log');
 
 dotenv.config();
 const app = express();
@@ -41,7 +44,7 @@ const options = {
         },
         servers: [
             {
-                url: "http://3.34.189.103:3000"
+                url: "https://api.cau-lovestory.site:3000"
             },
             {
                 url: "http://localhost:3000"
@@ -70,6 +73,7 @@ app.use('/memos',memosRouter);
 app.use('/dev/user',devUserRouter);
 app.use('/dev/couple',devCoupleRouter);
 app.use('/dev/token',devTokenRouter);
+app.use('/dev/log',devLogRouter);
 
 
 app.use((req, res, next) => {
@@ -84,9 +88,32 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500);
     res.render('error');
 });
-  
-app.listen(app.get('port'), ()=>{
-    console.log(app.get('port'),'번 포트에서 리스닝 중');
 
-})
+// 로컬 환경에서 실행할 때 사용할 기본 리스닝 설정
+const startLocalServer = () => {
+    app.listen(app.get('port'), () => {
+        console.log(app.get('port'), '번 포트에서 리스닝 중');
+    });
+}
+
+// 배포 환경에서 실행할 때 사용할 HTTPS 리스닝 설정
+const startHttpsServer = () => {
+    const privateKey = fs.readFileSync('/etc/letsencrypt/live/cau-lovestory.site/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/etc/letsencrypt/live/cau-lovestory.site/fullchain.pem', 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+  
+    https.createServer(credentials, app).listen(app.get('port'), () => {
+      console.log(app.get('port'), '번 포트에서 리스닝 중');
+    });
+  };
+
+// 환경 변수에 따라 실행할 서버를 선택합니다.
+if (process.env.NODE_ENV === 'dev') {
+    startLocalServer();
+  } else if (process.env.NODE_ENV === 'pub') {
+    startHttpsServer();
+  } else {
+    console.error('.env 파일에서 NODE_ENV 환경변수를 설정해야 함');
+  }
+  
 
