@@ -1,13 +1,15 @@
 pipeline {
     agent {
-        node{
-            label 'my_node_js'
-        }
+        label 'ubuntu_agent'
+    }
+    environment {
+        PATH = "${tool 'node'}:node_modules/.bin:${env.PATH}"
     }
     stages {
         stage('Install dependencies') {
             steps {
                 sh 'npm install'
+                sh 'npm install -g pm2'
             }
         }
         stage('Prepare .env file') {
