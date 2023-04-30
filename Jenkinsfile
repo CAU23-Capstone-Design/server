@@ -1,6 +1,8 @@
 pipeline {
     agent {
-        label 'ubuntu_agent'
+        node{
+            label 'ubuntu_agent'
+        }
     }
     stages {
         stage('Install dependencies') {
