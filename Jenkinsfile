@@ -1,6 +1,10 @@
 pipeline {
-    agent any
-
+    agent {
+        sshagent {
+            label 'ubuntu_agent'
+            credentialsId 'ubuntu'
+        }
+    }
     stages {
         stage('Install dependencies') {
             steps {
