@@ -1,7 +1,7 @@
 pipeline {
     agent {
         node{
-            label 'ubuntu_agent'
+            label 'my_node_js'
         }
     }
     stages {
