@@ -31,7 +31,7 @@ pipeline {
         }
         stage('Prepare .env file') {
             steps {
-                withCredentials([string(credentialsId: 'my_env_file', variable: 'ENV_CONTENTS')]) {
+                withCredentials([file(credentialsId: 'my_env_file', variable: 'ENV_CONTENTS')]) {
                     writeFile file: '.env', text: "${ENV_CONTENTS}"
                 }
             }
