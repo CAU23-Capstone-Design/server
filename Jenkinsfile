@@ -10,7 +10,7 @@ pipeline {
         }
         stage('Install PM2') {
             steps {
-                sh 'npm install pm2 -g'
+                sh 'npm install pm2'
             }
         }
         stage('Prepare .env file') {
