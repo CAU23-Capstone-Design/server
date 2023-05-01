@@ -10,6 +10,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const router = express.Router();
 const crypto = require('crypto');
+const sharp = require('sharp');
 
 dotenv.config();
 const base64Key = process.env.AES_SECRET_KEY;
@@ -178,7 +179,7 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
 
   const existingImage = await Image.findOne({ local_id });
   if (existingImage) {
-    cosole.error('local_id must be unique')
+    console.error('local_id must be unique')
     return res.status(400).json({ error: 'local_id must be unique' });
   }
 
@@ -186,7 +187,7 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
     // 이미지 암호화
     const metadata = await exifr.parse(req.file.path);
 
-    const date = metadata.DateTimeOriginal.toISOString().split('T')[0];
+    const date = metadata.DateTimeOriginal.toISOString();
     const latitude = metadata.latitude;
     const longitude = metadata.longitude;
 
@@ -202,31 +203,47 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
     const { iv, encrypted } = encryptImage(imageBuffer, secretKey);
     console.timeEnd("image_encryption");
 
+    const originDir = path.join(__dirname, '..', 'uploads', couple_id, 'origin');
+    if (!fs.existsSync(originDir)) {
+      fs.mkdirSync(originDir, { recursive: true });
+    }
+    const thumbnailDir = path.join(__dirname, '..', 'uploads', couple_id, 'thumbnail');
+    if (!fs.existsSync(thumbnailDir)) {
+      fs.mkdirSync(thumbnailDir, { recursive: true });
+    }
 
     // 암호화된 이미지 저장
-    const encryptedImagePath = path.join(path.dirname(req.file.path), 'encrypted_' + req.file.filename);
+    const encryptedImagePath = path.join(originDir, 'encrypted_' + req.file.filename);
     fs.promises.writeFile(encryptedImagePath, Buffer.concat([iv, encrypted]));
 
+    // 썸네일 생성 및 암호화
+    const thumbnailBuffer = await sharp(req.file.path).resize({ width: 200 }).toBuffer();
+    const { iv: thumbnailIv, encrypted: thumbnailEncrypted } = encryptImage(thumbnailBuffer, secretKey);
 
-    // 원본 이미지 삭제
-    fs.promises.unlink(req.file.path);
+    // 암호화된 썸네일 저장
+    const encryptedThumbnailPath = path.join(thumbnailDir, 'encrypted_thumbnail_' + req.file.filename);
+    fs.promises.writeFile(encryptedThumbnailPath, Buffer.concat([thumbnailIv, thumbnailEncrypted]));
 
     const newImage = new Image({
       couple_id,
       user_id,
       local_id,
       image_url: encryptedImagePath,
+      thumbnail_url: encryptedThumbnailPath,
       location,
       date,
       longitude,
       latitude,
     });
-
+    
     await newImage.save();
     res.status(201).json(newImage);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error uploading image' });
+  } finally{
+    // 원본 이미지 삭제
+    fs.promises.unlink(req.file.path);
   }
 });
 
@@ -270,12 +287,166 @@ router.get('/local-ids', verifyToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /images/local-ids/info:
+ *   get:
+ *     summary: 주어진 couple_id에 대한 모든 이미지 정보 조회
+ *     tags:
+ *       - Images
+ *     security:
+ *       - jwtToken: []
+ *     responses:
+ *       200:
+ *         description: 이미지 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Image'
+ *       500:
+ *         description: 이미지 정보 조회 오류
+ */
+router.get('/local-ids/info', verifyToken, async (req, res) => {
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const images = await Image.find({ couple_id });
+
+    res.status(200).json(images);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error retrieving local_ids' });
+  }
+});
+
+/**
+ * @swagger
+ * /images/thumbnails:
+ *   get:
+ *     summary: 암호화된 썸네일 이미지 범위 다운로드
+ *     tags:
+ *       - Images
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: query
+ *         name: start
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: 시작 이미지 인덱스 (기본값 0)
+ *       - in: query
+ *         name: end
+ *         required: false
+ *         schema:
+ *           type: integer
+ *         description: 종료 이미지 인덱스 (기본값 무한대)
+ *       - in: query
+ *         name: date
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: 필터링할 날짜 (YYYYMMDD 형식)
+ *       - in: query
+ *         name: area1
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: 필터링할 지역 1
+ *       - in: query
+ *         name: area2
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: 필터링할 지역 2
+ *     responses:
+ *       200:
+ *         description: 썸네일 이미지 범위 다운로드 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   image_info:
+ *                     type: object
+ *                     properties:
+ *                       local_id:
+ *                         type: string
+ *                       date:
+ *                         type: string
+ *                       area1:
+ *                         type: string
+ *                       area2:
+ *                         type: string
+ *                   thumbnail:
+ *                     type: string
+ *                     format: binary
+ *                     example: "썸네일 이미지 파일 raw 데이터 리턴"
+ *       404:
+ *         description: 썸네일 이미지를 찾을 수 없음
+ *       500:
+ *         description: 썸네일 이미지 범위 다운로드 오류
+ */
+router.get('/thumbnails', verifyToken, async (req, res) => {
+  const start = parseInt(req.query.start);
+  const end = parseInt(req.query.end);
+  const date = req.query.date;
+  const area1 = req.query.area1;
+  const area2 = req.query.area2;
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const filter = { couple_id };
+
+    if (date) filter.date = date;
+    if (area1) filter['location.area1'] = area1;
+    if (area2) filter['location.area2'] = area2;
+
+    const images = await Image.find(filter)
+                              .sort({ date: -1 })
+                              .skip(start)
+                              .limit(end - start + 1);
+
+    if (!images.length) {
+      res.status(404).json({ error: 'Thumbnail images not found' });
+      return;
+    }
+
+    const thumbnails = [];
+
+    for (const image of images) {
+      const thumbnailPath = image.thumbnail_url;
+      const encryptedThumbnailBuffer = fs.readFileSync(thumbnailPath);
+
+      // 썸네일 이미지 복호화
+      const decryptedThumbnail = decryptImage(encryptedThumbnailBuffer, secretKey);
+
+      const imageInfo = {
+        local_id: image.local_id,
+        date: image.date,
+        area1: image.location.area1,
+        area2: image.location.area2
+      };
+
+      thumbnails.push({ image_info: imageInfo, thumbnail: decryptedThumbnail });
+    }
+
+    res.status(200).json(thumbnails);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error downloading thumbnail images range' });
+  }
+});
 
 /**
  * @swagger
  * /images/{local_id}:
  *   get:
- *     summary: 암호화된 이미지 다운로드
+ *     summary: 암호화된 이미지 다운로드(화질 선택 가능)
  *     tags:
  *       - Images
  *     security:
@@ -286,6 +457,14 @@ router.get('/local-ids', verifyToken, async (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: quality
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 100
  *     responses:
  *       200:
  *         description: 이미지 다운로드 성공
@@ -303,6 +482,7 @@ router.get('/local-ids', verifyToken, async (req, res) => {
 router.get('/:local_id', verifyToken, async (req, res) => {
   const local_id = req.params.local_id;
   const couple_id = req.decoded.couple.couple_id;
+  const quality = parseInt(req.query.quality) || 100;
 
   try {
     const image = await Image.findOne({ couple_id, local_id });
@@ -318,14 +498,87 @@ router.get('/:local_id', verifyToken, async (req, res) => {
     // 이미지 복호화
     const decryptedImage = decryptImage(encryptedImageBuffer, secretKey);
 
+    // 이미지 리사이징
+    const resizedImageBuffer = await sharp(decryptedImage)
+      .metadata()
+      .then(({ width, height }) =>
+        sharp(decryptedImage)
+          .resize({
+            width: Math.round(width * (quality / 100)),
+            height: Math.round(height * (quality / 100)),
+            fit: 'contain',
+          })
+          .toBuffer()
+      )
+      .catch((error) => {
+        console.error(error);
+        throw new Error('Error resizing image');
+      });
+
     const fileExtension = path.extname(imagePath);
     res.setHeader('Content-Type', `image/${fileExtension}`);
-    res.status(200).send(decryptedImage);
+    res.status(200).send(resizedImageBuffer);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error downloading image' });
   }
 });
+/**
+ * @swagger
+ * /images/{local_id}/thumbnail:
+ *   get:
+ *     summary: 암호화된 썸네일 이미지 다운로드
+ *     tags:
+ *       - Images
+ *     security:
+ *       - jwtToken: []
+ *     parameters:
+ *       - in: path
+ *         name: local_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 썸네일 이미지 다운로드 성공
+ *         content:
+ *           image/*:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *               example: "썸네일 이미지 파일 raw 데이터 리턴"
+ *       404:
+ *         description: 썸네일 이미지를 찾을 수 없음
+ *       500:
+ *         description: 썸네일 이미지 다운로드 오류
+ */
+router.get('/:local_id/thumbnail', verifyToken, async (req, res) => {
+  const local_id = req.params.local_id;
+  const couple_id = req.decoded.couple.couple_id;
+
+  try {
+    const image = await Image.findOne({ couple_id, local_id });
+
+    if (!image) {
+      res.status(404).json({ error: 'Thumbnail image not found' });
+      return;
+    }
+
+    const thumbnailPath = image.thumbnail_url;
+    const encryptedThumbnailBuffer = fs.readFileSync(thumbnailPath);
+
+    // 썸네일 이미지 복호화
+    const decryptedThumbnail = decryptImage(encryptedThumbnailBuffer, secretKey);
+
+    const fileExtension = path.extname(thumbnailPath);
+    res.setHeader('Content-Type', `image/${fileExtension}`);
+    res.status(200).send(decryptedThumbnail);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error downloading thumbnail image' });
+  }
+});
+
 
 /**
  * @swagger
@@ -418,6 +671,7 @@ router.delete('/:local_id', verifyToken, async (req, res) => {
 
     // 이미지 파일 삭제
     await fs.promises.unlink(image.image_url);
+    await fs.promises.unlink(image.thumbnail_url);
 
     // DB에서 이미지 정보 삭제
     await Image.deleteOne({ couple_id, local_id });
@@ -461,6 +715,7 @@ router.delete('/', verifyToken, async (req, res) => {
     // 이미지 파일들 삭제
     for (const image of images) {
       await fs.promises.unlink(image.image_url);
+      await fs.promises.unlink(image.thumbnail_url);
     }
 
     // DB에서 이미지 정보들 삭제

@@ -19,6 +19,10 @@ const imageSchema = new Schema({
     type: String,
     required: true,
   },
+  thumbnail_url: {
+    type: String,
+    required: true,
+  },
   location: {
     area1: {
       type: String,
@@ -34,7 +38,7 @@ const imageSchema = new Schema({
     },
   },
   date: {
-    type: String,
+    type: Date,
     required: true,
   },
   longitude: {
