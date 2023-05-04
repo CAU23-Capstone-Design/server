@@ -15,7 +15,6 @@ module.exports = {
             res.status(401).json({ error: err });
           } else {
             req.decoded = decoded;
-            console.log('JWT Decoded',decoded.user._id,decoded.user.name);
             next();
           }
         });

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const connect = () => {
-    if (process.env.NODE_ENV !== 'production'){
+    if (process.env.NODE_ENV !== 'pub'){
         mongoose.set('debug',true);
     }
     mongoose.connect('mongodb://127.0.0.1:27017/lovestory')

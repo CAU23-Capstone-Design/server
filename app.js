@@ -1,6 +1,6 @@
 const express = require('express');
 const path = require('path');
-const morgan = require('morgan');
+// const morgan = require('morgan');
 const nunjucks = require('nunjucks');
 const dotenv = require('dotenv');
 const connect = require('./schemas');
@@ -58,7 +58,7 @@ const options = {
 const specs = swaggerJsDoc(options)
 
 app.use('/api-docs',swaggerUI.serve,swaggerUI.setup(specs))
-app.use(morgan('dev'));
+// app.use(morgan('dev'));
 app.use(express.json())
 
 // 서비스용 라우터

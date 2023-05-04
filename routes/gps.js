@@ -89,7 +89,6 @@ const getDistanceBetweenPoints = (lat1, lon1, lat2, lon2) => {
 */
 router.post('/',verifyToken, async (req, res, next) => {
   try {
-
     const { latitude, longitude } = req.body;
     const user_id = req.decoded.user._id;
     const gpsData = await Gps.create({
@@ -98,7 +97,7 @@ router.post('/',verifyToken, async (req, res, next) => {
       longitude,
       timestamp: Date.now(),
     });
-
+    console.log(req.decoded.user.name,' POST /gps 201 OK - ', gpsData);
     res.status(201).json(gpsData);
   } catch (error) {
     console.error(error);
@@ -170,6 +169,7 @@ router.get('/check-nearby',verifyToken, async (req, res, next) => {
     );
 
     const isNearby = distance <= 100; // 100 meters
+    console.log(req.decoded.user.name,' GET /gps/check-nearby 200 OK - ', { isNearby, distance });
     res.status(200).json({ isNearby ,distance});
   } catch (error) {
     console.error(error);
@@ -211,7 +211,9 @@ router.get('/couple', verifyToken, async (req, res, next) => {
       const user2_id = couple.user2_id;
       const gpsDataUser1 = await Gps.find({ user_id: user1_id });
       const gpsDataUser2 = await Gps.find({ user_id: user2_id });
-  
+      
+
+      console.log(req.decoded.user.name, ' GET /gps/couple 200 OK - ', { user1: gpsDataUser1, user2: gpsDataUser2 });
       res.status(200).json({ user1: gpsDataUser1, user2: gpsDataUser2 });
     } catch (error) {
       console.error(error);
@@ -247,6 +249,7 @@ try {
     if (!gpsData) {
     res.status(404).json({ error: 'GPS data not found for the given user_id' });
     } else {
+    console.log(req.decoded.user.name,' GET /gps/user 200 OK - ', gpsData);
     res.status(200).json(gpsData);
     }
 } catch (error) {
@@ -312,6 +315,8 @@ router.put('/:index', verifyToken, async (req, res, next) => {
         res.status(404).json({ error: 'GPS data not found' });
         return;
       }
+
+      console.log(req.decoded.user.name,' PUT /gps/{index} 200 OK - ', updatedGpsData);
       res.json(updatedGpsData);
     } catch (error) {
       console.error(error);
@@ -319,20 +324,21 @@ router.put('/:index', verifyToken, async (req, res, next) => {
     }
   });
   
-  // Delete GPS data by index
-  router.delete('/:index', verifyToken, async (req, res, next) => {
-    try {
-      const result = await Gps.findOneAndDelete({ index: req.params.index });
-      if (!result) {
-        res.status(404).json({ error: 'GPS data not found' });
-        return;
-      }
-      res.status(204).send();
-    } catch (error) {
-      console.error(error);
-      next(error);
+// Delete GPS data by index
+router.delete('/:index', verifyToken, async (req, res, next) => {
+  try {
+    const result = await Gps.findOneAndDelete({ index: req.params.index });
+    if (!result) {
+      res.status(404).json({ error: 'GPS data not found' });
+      return;
     }
-  });
+    console.log(req.decoded.user.name,' DELETE /gps/{index} 204 OK - ', result);
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
 
   
 module.exports = router;
