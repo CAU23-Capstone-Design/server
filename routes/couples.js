@@ -182,8 +182,7 @@ router.post('/', verifyToken, async (req, res) => {
       token: newToken,
     }); 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 });
 
@@ -272,8 +271,7 @@ router.get('/', verifyToken, async (req, res) => {
       token: newToken,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 });
 
@@ -324,8 +322,7 @@ router.put('/', verifyToken, async (req, res) => {
 
     res.json({ message: 'Couple updated successfully', couple });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 });
 
@@ -361,8 +358,7 @@ router.delete('/', verifyToken, async (req, res) => {
 
     res.json({ message: 'Couple deleted successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    next(error);
   }
 });
 

@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
 // const morgan = require('morgan');
-const nunjucks = require('nunjucks');
 const dotenv = require('dotenv');
 const connect = require('./schemas');
 const swaggerUI = require('swagger-ui-express');
@@ -27,11 +26,6 @@ const devLogRouter = require('./routes/dev/log');
 dotenv.config();
 const app = express();
 app.set('port',process.env.PORT || 3000);
-app.set('view engine','html');
-nunjucks.configure('views',{
-    express: app,
-    watch: true,
-})
 
 connect();
 const options = {
@@ -83,10 +77,8 @@ app.use((req, res, next) => {
   });
   
 app.use((err, req, res, next) => {
-    res.locals.message = err.message;
-    res.locals.error = process.env.NODE_ENV !== 'production' ? err : {};
-    res.status(err.status || 500);
-    res.render('error');
+    console.error(err);
+    res.status(err.status || 500).json({message: err.message});
 });
 
 // 로컬 환경에서 실행할 때 사용할 기본 리스닝 설정

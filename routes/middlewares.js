@@ -38,7 +38,6 @@ module.exports = {
 
       next();
     } catch(error){
-      console.error(error);
       next(error);
     }
   },
@@ -53,7 +52,6 @@ module.exports = {
 
       next();
     } catch (error) {
-      console.error(error);
       next(error);
     }
   }

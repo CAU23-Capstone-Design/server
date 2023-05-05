@@ -84,8 +84,7 @@ const getGeoLocation = async (longitude, latitude) => {
 
     return { 'area1' : area1, 'area2': area2, 'area3':area3 };
   } catch (error) {
-    console.error(error);
-    return {};
+    next(error);
   }
 };
 
@@ -179,7 +178,7 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
 
   const existingImage = await Image.findOne({ local_id });
   if (existingImage) {
-    console.error('local_id must be unique')
+    fs.promises.unlink(req.file.path);
     return res.status(400).json({ error: 'local_id must be unique' });
   }
 
@@ -246,8 +245,7 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
     console.log(req.decoded.user.name,' POST /images 201 OK ', newImage.date,  newImage.couple_id, req.file.filename);
     res.status(201).json(newImage);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error uploading image' });
+    next(error);
   } finally{
     // 원본 이미지 삭제
     fs.promises.unlink(req.file.path);
@@ -290,8 +288,7 @@ router.get('/local-ids', verifyToken, verifyUser, verifyCouple, async (req, res)
     console.log(req.decoded.user.name,' GET /images/local-ids 200 OK ', local_ids.length);
     res.status(200).json(local_ids);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error retrieving local_ids' });
+    next(error);
   }
 });
 
@@ -325,8 +322,7 @@ router.get('/local-ids/info', verifyToken, verifyUser, verifyCouple, async (req,
     console.log(req.decoded.user.name,' GET /images/local-ids/info 200 OK ', images.length);
     res.status(200).json(images);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error retrieving local_ids' });
+    next(error);
   }
 });
 
@@ -447,8 +443,7 @@ router.get('/thumbnails', verifyToken, verifyUser, verifyCouple, async (req, res
     console.log(req.decoded.user.name,' GET /images/thumbnails 200 OK ', thumbnails.map(thumbnail => thumbnail.image_info.local_id));
     res.status(200).json(thumbnails);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error downloading thumbnail images range' });
+    next(error);
   }
 });
 
@@ -521,7 +516,6 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res)
           .toBuffer()
       )
       .catch((error) => {
-        console.error(error);
         throw new Error('Error resizing image');
       });
     console.log(req.decoded.user.name,' GET /images/{local_id} 200 OK ', local_id);
@@ -529,8 +523,7 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res)
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(resizedImageBuffer);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error downloading image' });
+    next(error);
   }
 });
 /**
@@ -585,8 +578,7 @@ router.get('/:local_id/thumbnail', verifyToken, verifyUser, verifyCouple, async 
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(decryptedThumbnail);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error downloading thumbnail image' });
+    next(error);
   }
 });
 
@@ -633,8 +625,7 @@ router.get('/:local_id/info', verifyToken, verifyUser, verifyCouple, async (req,
     console.log(req.decoded.user.name,' GET /images/{local_id}/info 200 OK ', local_id);
     res.status(200).json(image);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error fetching image information' });
+    next(error);
   }
 });
 
@@ -691,8 +682,7 @@ router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, r
     console.log(req.decoded.user.name,' DELETE /images/{local_id} 200 OK ', local_id);
     res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error deleting image' });
+    next(error);
   }
 });
 
@@ -737,8 +727,7 @@ router.delete('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
     console.log(req.decoded.user.name,' DELETE /images 200 OK ');
     res.status(200).json({ message: 'All images deleted successfully' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error deleting images' });
+    next(error);
   }
 });
 

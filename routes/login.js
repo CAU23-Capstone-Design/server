@@ -116,8 +116,7 @@ router.post('/', async (req, res) => {
         console.log('/login 토큰 발급',token);
 
     } catch (error) {
-        console.error(error);
-        res.status(500).send('Error occurred while processing the access token');
+        next(error);
     }
 });
 
