@@ -216,7 +216,19 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
     const otherUserId = req.decoded.couple.user1_id === user_id ? req.decoded.couple.user2_id : req.decoded.couple.user1_id; // 상대방 user의 id
 
     const currentUserGps = await Gps.findOne({ user_id: user_id }).sort({ timestamp: -1 });
+    // 상대방 user의 가장 최근 GPS 데이터, timestamp가 최근 5분 이내의 데이터만 가져옴
+    // Date를 사용할때 한국 시간 기준으로 사용하기 위해 9시간을 더해줌
+    /* 실제 서비스에서는 아래의 코드를 사용
+      const otherUserGps = await Gps.findOne({
+      user_id: otherUserId,
+      timestamp: { $gte: new Date(new Date().getTime() + 9 * 60 * 60 * 1000 - 5 * 60 * 1000) },
+    }).sort({ timestamp: -1 });
+    */
+
     const otherUserGps = await Gps.findOne({ user_id: otherUserId }).sort({ timestamp: -1 });
+
+
+
 
     if (!currentUserGps || !otherUserGps) {
       res.status(404).json({ error: 'GPS data not found' });
