@@ -187,7 +187,6 @@ router.post('/', verifyToken, async (req, res) => {
   }
 });
 
-
 /**
  * @swagger
  * /couples:
@@ -277,6 +276,7 @@ router.get('/', verifyToken, async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 /**
  * @swagger
  * /couples:
@@ -309,7 +309,7 @@ router.get('/', verifyToken, async (req, res) => {
  */
 router.put('/', verifyToken, async (req, res) => {
   try {
-    const couple_id = req.decoded.couple_id;
+    const couple_id = req.decoded.couple.couple_id;
     const updateData = req.body;
 
     const couple = await Couple.findOneAndUpdate(
@@ -351,7 +351,7 @@ router.put('/', verifyToken, async (req, res) => {
  */
 router.delete('/', verifyToken, async (req, res) => {
   try {
-    const couple_id = req.decoded.couple_id;
+    const couple_id = req.decoded.couple.couple_id;
 
     const couple = await Couple.findOneAndDelete({ couple_id });
 
@@ -365,6 +365,5 @@ router.delete('/', verifyToken, async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 
 module.exports = router;
