@@ -1,5 +1,7 @@
 const express = require('express');
 const Gps = require('../schemas/gps');
+const CouplesGps = require('../schemas/couplesGps');
+
 const router = express.Router();
 const User = require('../schemas/user');
 const Couple = require('../schemas/couple');
@@ -50,7 +52,74 @@ const getDistanceBetweenPoints = (lat1, lon1, lat2, lon2) => {
     return R * c;
   };
   
+function haversineDistance(a, b) {
+  const R = 6371e3; // 지구의 반지름 (미터)
+  const lat1 = a.latitude * (Math.PI / 180);
+  const lat2 = b.latitude * (Math.PI / 180);
+  const dLat = (b.latitude - a.latitude) * (Math.PI / 180);
+  const dLon = (b.longitude - a.longitude) * (Math.PI / 180);
 
+  const aCalc = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(aCalc), Math.sqrt(1 - aCalc));
+
+  return R * c;
+}
+
+function rangeQuery(points, point, eps) {
+  // 두 point 사이의 거리가 eps보다 작거나 같은 point를 반환
+  return points.filter((other) => haversineDistance(point, other) <= eps);
+}
+
+
+// DBSCAN 알고리즘
+// points : GPS 좌표들의 배열
+// eps : 클러스터의 반경(m)
+// minPts : 클러스터를 구성하는 최소 점의 개수
+function dbscan(points, eps, minPts) {
+  const clusters = [];
+  const visited = new Set();
+  const noise = new Set();
+
+  for (const point of points) {
+    if (visited.has(point)) continue;
+    visited.add(point);
+
+    const neighbors = rangeQuery(points, point, eps);
+
+    if (neighbors.length < minPts) {
+      noise.add(point);
+    } else {
+      // 주변에 minPts 이상의 점이 있으면 새로운 클러스터를 생성
+      const cluster = [];
+      clusters.push(cluster);
+
+      // 주변 점들도 방문한 point로 취급
+      for (let i = 0; i < neighbors.length; i++) {
+        const neighbor = neighbors[i];
+
+        // 방문하지 않은 점이면 방문한 점으로 표시
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+
+          const neighborNeighbors = rangeQuery(points, neighbor, eps);
+
+          if (neighborNeighbors.length >= minPts) {
+            neighbors.push(...neighborNeighbors.filter((nn) => !visited.has(nn)));
+          }
+        }
+
+        if (!clusters.some((c) => c.includes(neighbor))) {
+          cluster.push(neighbor);
+        }
+      }
+    }
+  }
+
+  return { clusters, noise };
+}
+
+
+  
 /**
  * @swagger
  * /gps:
@@ -106,7 +175,6 @@ router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) =>
     console.log(req.decoded.user.name,' POST /gps 201 OK - ', 'lat: ',gpsData.latitude,', long: ' ,gpsData.longitude);
     res.status(201).json(gpsData);
   } catch (error) {
-    console.error(error);
     next(error);
   }
 });
@@ -142,18 +210,10 @@ router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) =>
 *              description: Internal server error
 */
 
-router.get('/check-nearby',verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
+router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   try {
-    const user_id = req.decoded.user._id;
-
-
-    const couple = await Couple.findOne({ $or: [{ user1_id: user_id }, { user2_id: user_id }] });
-    if (!couple) {
-      res.status(404).json({ error: 'Couple not found' });
-      return;
-    }
-
-    const otherUserId = couple.user1_id === user_id ? couple.user2_id : couple.user1_id;
+    const user_id = req.decoded.user._id; // 현재 user의 id
+    const otherUserId = req.decoded.couple.user1_id === user_id ? req.decoded.couple.user2_id : req.decoded.couple.user1_id; // 상대방 user의 id
 
     const currentUserGps = await Gps.findOne({ user_id: user_id }).sort({ timestamp: -1 });
     const otherUserGps = await Gps.findOne({ user_id: otherUserId }).sort({ timestamp: -1 });
@@ -171,26 +231,65 @@ router.get('/check-nearby',verifyToken, verifyUser, verifyCouple, async (req, re
     );
 
     const isNearby = distance <= 100; // 100 meters
-    console.log(req.decoded.user.name,' GET /gps/check-nearby 200 OK - ', { isNearby, distance });
-    res.status(200).json({ isNearby ,distance});
+
+    if (isNearby) {
+      const currentUTCDate = new Date();
+      const currentKSTDate = new Date(currentUTCDate.getTime() + 9 * 60 * 60 * 1000);
+      const oneMinuteAgo = new Date(currentKSTDate.getTime() - 60 * 1000);
+
+      const existingCouplesGps = await CouplesGps.findOne({
+        couple_id: req.decoded.couple.couple_id,
+        timestamp: { $gte: oneMinuteAgo },
+      });
+
+      if (!existingCouplesGps) {
+        const couplesGpsData = new CouplesGps({
+          couple_id: req.decoded.couple.couple_id,
+          latitude: currentUserGps.latitude,
+          longitude: currentUserGps.longitude,
+          timestamp: currentUserGps.timestamp,
+        });
+        await couplesGpsData.save();
+      }
+    }
+
+    console.log(req.decoded.user.name, ' GET /gps/check-nearby 200 OK - ', { isNearby, distance });
+    res.status(200).json({ isNearby, distance });
   } catch (error) {
-    console.error(error);
     next(error);
   }
 });
 
 /**
  * @swagger
- * /gps/couple:
+ * /gps/couples:
  *  get:
- *      summary: Get GPS locations of both users in the same couple using JWT token
+ *      summary: 커플의 gps 정보를 클러스터링 하여 반환
  *      tags:
  *       - GPS
  *      security:
  *       - jwtToken: []
+ *      parameters:
+ *       - name: date
+ *         in: query
+ *         description: 특정 날짜로 gps 데이터 필터링 가능 (YYYY-MM-DD)
+ *         required: true
+ *         schema:
+ *           type: string
  *      responses:
  *          200:
  *              description: Success
+ *              content:
+ *                application/json:
+ *                  schema:
+ *                    type: object
+ *                    properties:
+ *                      clusters:
+ *                        type: array
+ *                        items:
+ *                          type: array
+ *                          items:
+ *                            type: integer
  *          404:
  *              description: GPS data not found for the given couple_id
  *          401:
@@ -198,25 +297,55 @@ router.get('/check-nearby',verifyToken, verifyUser, verifyCouple, async (req, re
  *          500:
  *              description: Internal server error
  */
-// Get GPS locations of both users in the same couple using JWT token
-router.get('/couple', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
-    try {
-      const couple_id = req.decoded.couple.couple_id;
+router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
+  try {
+    const { date } = req.query;
 
-  
-      const user1_id = req.decoded.couple.user1_id;
-      const user2_id = req.decoded.couple.user2_id;
-      const gpsDataUser1 = await Gps.find({ user_id: user1_id });
-      const gpsDataUser2 = await Gps.find({ user_id: user2_id });
-      
-
-      console.log(req.decoded.user.name, ' GET /gps/couple 200 OK - ', { user1: gpsDataUser1, user2: gpsDataUser2 });
-      res.status(200).json({ user1: gpsDataUser1, user2: gpsDataUser2 });
-    } catch (error) {
-      console.error(error);
-      next(error);
+    // date 정보가 없을 경우 에러 처리
+    if (!date) {
+      res.status(400).json({ error: 'Date is required' });
+      return;
     }
-  });
+
+    const couple_id = req.decoded.couple.couple_id;
+    const query = { couple_id };
+
+
+    const startDate = new Date(date);
+    const endDate = new Date(date);
+    endDate.setDate(endDate.getDate() + 1);
+
+    console.log(startDate, endDate);
+
+    query.timestamp = { $gte: startDate, $lt: endDate };
+
+    const gpsData = await CouplesGps.find(query, { _id: 0, latitude: 1, longitude: 1 });
+    console.log(gpsData);
+
+    // 클러스터링 알고리즘에 필요한 파라미터 설정
+    const eps = 30; // 밀도 기반 클러스터링에서 가장 중요한 하이퍼파라미터로, 한 클러스터에 포함되는 점들 사이의 최대 거리
+    const minPoints = 3; // 클러스터를 구성하는 최소한의 점의 개수
+
+    // 클러스터링 실행
+    const result = dbscan(gpsData, eps, minPoints);
+    const clusters = result.clusters;
+
+    // clusters 중에서 대표 점 하나들만 추출, 각각의 클러스터에 몇개의 점이 포함되어 있는지도 확인
+    clusters.forEach((cluster, index) => {
+      const representativePoint = cluster[0];
+      clusters[index] = {
+        representativePoint,
+        count: cluster.length,
+      };
+    });
+
+    console.log(req.decoded.user.name, ' GET /gps/couples 200 OK - ', { clusters });
+    // 클러스터링 결과를 반환
+    res.status(200).json({ clusters });
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
   * @swagger 
@@ -250,8 +379,7 @@ try {
     res.status(200).json(gpsData);
     }
 } catch (error) {
-    console.error(error);
-    next(error);
+  next(error);
 }
 });
 
@@ -316,7 +444,6 @@ router.put('/:index', verifyToken, verifyUser, verifyCouple, async (req, res, ne
       console.log(req.decoded.user.name,' PUT /gps/{index} 200 OK - ', updatedGpsData);
       res.json(updatedGpsData);
     } catch (error) {
-      console.error(error);
       next(error);
     }
   });
@@ -332,7 +459,6 @@ router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res,
     console.log(req.decoded.user.name,' DELETE /gps/{index} 204 OK - ', result);
     res.status(204).send();
   } catch (error) {
-    console.error(error);
     next(error);
   }
 });
