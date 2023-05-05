@@ -187,7 +187,13 @@ router.post('/', verifyToken, upload.single('image'), async (req, res) => {
     // 이미지 암호화
     const metadata = await exifr.parse(req.file.path);
 
-    const date = metadata.DateTimeOriginal.toISOString();
+    // 한국 시간으로 변환해서 데이터 저장
+    const utcDate = metadata.DateTimeOriginal;
+    const koreanDate = new Date(utcDate.getTime() + 9 * 60 * 60 * 1000);
+
+    const date = koreanDate.toISOString();
+
+
     const latitude = metadata.latitude;
     const longitude = metadata.longitude;
 
