@@ -3,7 +3,7 @@ const Gps = require('../schemas/gps');
 const router = express.Router();
 const User = require('../schemas/user');
 const Couple = require('../schemas/couple');
-const {verifyToken} = require('./middlewares');
+const { verifyToken, verifyUser, verifyCouple} = require('./middlewares');
 
 /**
  * @swagger
@@ -87,7 +87,7 @@ const getDistanceBetweenPoints = (lat1, lon1, lat2, lon2) => {
  *          500:
  *              description: Internal server error
 */
-router.post('/',verifyToken, async (req, res, next) => {
+router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   try {
     const { latitude, longitude } = req.body;
     const user_id = req.decoded.user._id;
@@ -136,7 +136,7 @@ router.post('/',verifyToken, async (req, res, next) => {
 *              description: Internal server error
 */
 
-router.get('/check-nearby',verifyToken, async (req, res, next) => {
+router.get('/check-nearby',verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   try {
     const user_id = req.decoded.user._id;
     const user = await User.findById(user_id);
@@ -197,7 +197,7 @@ router.get('/check-nearby',verifyToken, async (req, res, next) => {
  *              description: Internal server error
  */
 // Get GPS locations of both users in the same couple using JWT token
-router.get('/couple', verifyToken, async (req, res, next) => {
+router.get('/couple', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
     try {
       const couple_id = req.decoded.couple_id;
       const couple = await Couple.findOne({ couple_id: couple_id });
@@ -241,7 +241,7 @@ router.get('/couple', verifyToken, async (req, res, next) => {
   *              description: Internal server error
   */
 // Get GPS locations of a specific user using JWT token
-router.get('/user', verifyToken, async (req, res, next) => {
+router.get('/user', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
 try {
     const user_id = req.decoded.user_id;
     const gpsData = await Gps.find({ user_id: user_id });
@@ -306,7 +306,7 @@ try {
  *         description: GPS data not found
  */
 // Update GPS data by index
-router.put('/:index', verifyToken, async (req, res, next) => {
+router.put('/:index', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
     try {
       const updatedGpsData = await Gps.findOneAndUpdate({ index: req.params.index }, req.body, {
         new: true,
@@ -325,7 +325,7 @@ router.put('/:index', verifyToken, async (req, res, next) => {
   });
   
 // Delete GPS data by index
-router.delete('/:index', verifyToken, async (req, res, next) => {
+router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   try {
     const result = await Gps.findOneAndDelete({ index: req.params.index });
     if (!result) {

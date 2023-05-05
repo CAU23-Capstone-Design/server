@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require('./middlewares');
+const { verifyToken,verifyUser, verifyCouple } = require('./middlewares');
 const Memo = require('../schemas/memo');
 
 /**
@@ -75,7 +75,7 @@ const Memo = require('../schemas/memo');
  *       500:
  *         description: Error creating memo
  */
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   const { content, date } = req.body;
   const couple_id = req.decoded.couple.couple_id;
 
@@ -112,7 +112,7 @@ router.post('/', verifyToken, async (req, res) => {
  *         '500':
  *           description: Internal server error
  */
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   const couple_id = req.decoded.couple.couple_id;
 
   try {
@@ -154,7 +154,7 @@ router.get('/', verifyToken, async (req, res) => {
  *         '500':
  *           description: Internal server error
  */
-router.get('/:date', verifyToken, async (req, res) => {
+router.get('/:date', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   const date = req.params.date;
   const couple_id = req.decoded.couple.couple_id;
 
@@ -216,7 +216,7 @@ router.get('/:date', verifyToken, async (req, res) => {
  *       500:
  *         description: Error updating or creating memo
  */
-router.put('/:date', verifyToken, async (req, res) => {
+router.put('/:date', verifyToken,verifyUser, verifyCouple, async (req, res) => {
   const { content } = req.body;
   const date = req.params.date;
   const couple_id = req.decoded.couple.couple_id;
@@ -288,7 +288,7 @@ router.put('/:date', verifyToken, async (req, res) => {
  *                   type: string
  *                   example: Error deleting memo
  */
-router.delete('/memoid/:memoId', verifyToken, async (req, res) => {
+router.delete('/memoid/:memoId', verifyToken,verifyUser, verifyCouple, async (req, res) => {
   const memoId = req.params.memoId;
 
   try {
@@ -355,7 +355,7 @@ router.delete('/memoid/:memoId', verifyToken, async (req, res) => {
  *         'application/json':
  *           message: Memos deleted successfully
  */
-router.delete('/date/:date', verifyToken, async (req, res) => {
+router.delete('/date/:date', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   const date = req.params.date;
   const couple_id = req.decoded.couple.couple_id;
 
