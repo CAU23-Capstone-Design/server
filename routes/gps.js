@@ -102,7 +102,7 @@ router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) =>
       longitude,
       timestamp: currentKSTDate,
     });
-    
+
     console.log(req.decoded.user.name,' POST /gps 201 OK - ', 'lat: ',gpsData.latitude,', long: ' ,gpsData.longitude);
     res.status(201).json(gpsData);
   } catch (error) {
@@ -145,11 +145,7 @@ router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) =>
 router.get('/check-nearby',verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   try {
     const user_id = req.decoded.user._id;
-    const user = await User.findById(user_id);
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
+
 
     const couple = await Couple.findOne({ $or: [{ user1_id: user_id }, { user2_id: user_id }] });
     if (!couple) {
@@ -205,16 +201,11 @@ router.get('/check-nearby',verifyToken, verifyUser, verifyCouple, async (req, re
 // Get GPS locations of both users in the same couple using JWT token
 router.get('/couple', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
     try {
-      const couple_id = req.decoded.couple_id;
-      const couple = await Couple.findOne({ couple_id: couple_id });
+      const couple_id = req.decoded.couple.couple_id;
+
   
-      if (!couple) {
-        res.status(404).json({ error: 'Couple not found for the given couple_id' });
-        return;
-      }
-  
-      const user1_id = couple.user1_id;
-      const user2_id = couple.user2_id;
+      const user1_id = req.decoded.couple.user1_id;
+      const user2_id = req.decoded.couple.user2_id;
       const gpsDataUser1 = await Gps.find({ user_id: user1_id });
       const gpsDataUser2 = await Gps.find({ user_id: user2_id });
       
@@ -249,7 +240,7 @@ router.get('/couple', verifyToken, verifyUser, verifyCouple, async (req, res, ne
 // Get GPS locations of a specific user using JWT token
 router.get('/user', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
 try {
-    const user_id = req.decoded.user_id;
+    const user_id = req.decoded.user._id;
     const gpsData = await Gps.find({ user_id: user_id });
 
     if (!gpsData) {
