@@ -281,7 +281,7 @@ router.get('/local-ids', verifyToken, async (req, res) => {
   try {
     const images = await Image.find({ couple_id });
     const local_ids = images.map(image => image.local_id);
-    console.log(req.decoded.user.name,' GET /images/local-ids 200 OK ', local_ids);
+    console.log(req.decoded.user.name,' GET /images/local-ids 200 OK ', local_ids.length);
     res.status(200).json(local_ids);
   } catch (error) {
     console.error(error);
@@ -316,7 +316,7 @@ router.get('/local-ids/info', verifyToken, async (req, res) => {
   try {
     const images = await Image.find({ couple_id });
     // console.log에 출력되는 정보는 images 배열중에서 각 요소의 local_id만 출력
-    console.log(req.decoded.user.name,' GET /images/local-ids/info 200 OK ', images.map(image => image.local_id));
+    console.log(req.decoded.user.name,' GET /images/local-ids/info 200 OK ', images.length);
     res.status(200).json(images);
   } catch (error) {
     console.error(error);

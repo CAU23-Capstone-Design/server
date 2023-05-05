@@ -97,7 +97,7 @@ router.post('/',verifyToken, async (req, res, next) => {
       longitude,
       timestamp: Date.now(),
     });
-    console.log(req.decoded.user.name,' POST /gps 201 OK - ', gpsData);
+    console.log(req.decoded.user.name,' POST /gps 201 OK - ', 'lat: ',gpsData.latitude,', long: ' ,gpsData.longitude);
     res.status(201).json(gpsData);
   } catch (error) {
     console.error(error);
