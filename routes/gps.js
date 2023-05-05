@@ -91,12 +91,18 @@ router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) =>
   try {
     const { latitude, longitude } = req.body;
     const user_id = req.decoded.user._id;
+
+    // 시간 정보를 한국 시간으로 변환
+    const currentUTCDate = new Date();
+    const currentKSTDate = new Date(currentUTCDate.getTime() + 9 * 60 * 60 * 1000);
+
     const gpsData = await Gps.create({
       user_id,
       latitude,
       longitude,
-      timestamp: Date.now(),
+      timestamp: currentKSTDate,
     });
+    
     console.log(req.decoded.user.name,' POST /gps 201 OK - ', 'lat: ',gpsData.latitude,', long: ' ,gpsData.longitude);
     res.status(201).json(gpsData);
   } catch (error) {
