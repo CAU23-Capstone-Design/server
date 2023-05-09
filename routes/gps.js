@@ -382,7 +382,7 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
 router.get('/user', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
 try {
     const user_id = req.decoded.user._id;
-    const gpsData = await Gps.find({ user_id: user_id });
+    const gpsData = await Gps.find({ user_id: user_id }).sort({ index : -1 }).limit(100);
 
     if (!gpsData) {
     res.status(404).json({ error: 'GPS data not found for the given user_id' });
