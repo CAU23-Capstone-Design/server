@@ -335,8 +335,8 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
     console.log(gpsData);
 
     // 클러스터링 알고리즘에 필요한 파라미터 설정
-    const eps = 30; // 밀도 기반 클러스터링에서 가장 중요한 하이퍼파라미터로, 한 클러스터에 포함되는 점들 사이의 최대 거리
-    const minPoints = 3; // 클러스터를 구성하는 최소한의 점의 개수
+    const eps = 20; // 밀도 기반 클러스터링에서 가장 중요한 하이퍼파라미터로, 한 클러스터에 포함되는 점들 사이의 최대 거리
+    const minPoints = 10; // 클러스터를 구성하는 최소한의 점의 개수
 
     // 클러스터링 실행
     const result = dbscan(gpsData, eps, minPoints);
