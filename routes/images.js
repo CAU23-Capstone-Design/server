@@ -200,7 +200,6 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
     // api 호출(네이버 맵)
     const location = await getGeoLocation(longitude, latitude);
     console.timeEnd("naver_map_api_call");
-    console.log(location);
 
     console.time("image_encryption");
     // 이미지 저장    
@@ -242,7 +241,7 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
     });
     
     await newImage.save();
-    console.log(req.decoded.user.name,' POST /images 201 OK ', newImage.date,  newImage.couple_id, req.file.filename);
+    console.log(`${req.currentDate} ${req.decoded.user.name} POST /images 201 OK ${newImage.date} ${newImage.couple_id} ${req.file.filename}`);
     res.status(201).json(newImage);
   } catch (error) {
     next(error);
@@ -285,7 +284,7 @@ router.get('/local-ids', verifyToken, verifyUser, verifyCouple, async (req, res)
   try {
     const images = await Image.find({ couple_id });
     const local_ids = images.map(image => image.local_id);
-    console.log(req.decoded.user.name,' GET /images/local-ids 200 OK ', local_ids.length);
+    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/local-ids 200 OK ${local_ids.length}`);
     res.status(200).json(local_ids);
   } catch (error) {
     next(error);
@@ -319,7 +318,7 @@ router.get('/local-ids/info', verifyToken, verifyUser, verifyCouple, async (req,
   try {
     const images = await Image.find({ couple_id });
     // console.log에 출력되는 정보는 images 배열중에서 각 요소의 local_id만 출력
-    console.log(req.decoded.user.name,' GET /images/local-ids/info 200 OK ', images.length);
+    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/local-ids/info 200 OK ${images.length}`);
     res.status(200).json(images);
   } catch (error) {
     next(error);
@@ -440,7 +439,7 @@ router.get('/thumbnails', verifyToken, verifyUser, verifyCouple, async (req, res
       thumbnails.push({ image_info: imageInfo, thumbnail: decryptedThumbnail });
     }
     // thunmbnails 중에서 image_info만 뽑아서 console.log에 기록
-    console.log(req.decoded.user.name,' GET /images/thumbnails 200 OK ', thumbnails.map(thumbnail => thumbnail.image_info.local_id));
+    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/thumbnails 200 OK ${thumbnails.length}`)
     res.status(200).json(thumbnails);
   } catch (error) {
     next(error);
@@ -518,7 +517,7 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res)
       .catch((error) => {
         throw new Error('Error resizing image');
       });
-    console.log(req.decoded.user.name,' GET /images/{local_id} 200 OK ', local_id);
+    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id} 200 OK`);
     const fileExtension = path.extname(imagePath);
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(resizedImageBuffer);
@@ -573,7 +572,7 @@ router.get('/:local_id/thumbnail', verifyToken, verifyUser, verifyCouple, async 
     // 썸네일 이미지 복호화
     const decryptedThumbnail = decryptImage(encryptedThumbnailBuffer, secretKey);
 
-    console.log(req.decoded.user.name,' GET /images/{local_id}/thumbnail 200 OK ', local_id);
+    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id}/thumbnail 200 OK`);
     const fileExtension = path.extname(thumbnailPath);
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(decryptedThumbnail);
@@ -622,7 +621,7 @@ router.get('/:local_id/info', verifyToken, verifyUser, verifyCouple, async (req,
       return;
     }
 
-    console.log(req.decoded.user.name,' GET /images/{local_id}/info 200 OK ', local_id);
+    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id}/info 200 OK`);
     res.status(200).json(image);
   } catch (error) {
     next(error);
@@ -680,6 +679,7 @@ router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, r
     await Image.deleteOne({ couple_id, local_id });
 
     console.log(req.decoded.user.name,' DELETE /images/{local_id} 200 OK ', local_id);
+    console.log(`${req.currentDate} ${req.decoded.user.name} DELETE /images/${local_id} 200 OK`);
     res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
     next(error);
@@ -724,7 +724,7 @@ router.delete('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
     // DB에서 이미지 정보들 삭제
     await Image.deleteMany({ couple_id });
 
-    console.log(req.decoded.user.name,' DELETE /images 200 OK ');
+    console.log(`${req.currentDate} ${req.decoded.user.name} DELETE /images 200 OK`);
     res.status(200).json({ message: 'All images deleted successfully' });
   } catch (error) {
     next(error);

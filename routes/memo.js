@@ -82,7 +82,9 @@ router.post('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   try {
     const newMemo = new Memo({ couple_id, content, date });
     await newMemo.save();
-    console.log(req.decoded.user.name,' POST /memos 201 OK' , content, date);
+
+    console.log(`${req.currentDate} - ${req.decoded.user.name} POST /memos 201 OK - `, { content, date });
+
     res.status(201).json(newMemo);
   } catch (error) {
     res.status(500).json({ error: 'Error creating memo' });
@@ -118,7 +120,7 @@ router.get('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   try {
     const memos = await Memo.find({ couple_id });
     // console.log로 메모의 memos의 내용중, content만 출력
-    console.log(req.decoded.user.name,' GET /memos 200 OK', memos.map(memo => memo.content));
+    console.log(`${req.currentDate} - ${req.decoded.user.name} GET /memos 200 OK - memos.length : ${memos.length}`);
     res.status(200).json(memos);
   } catch (error) {
     res.status(500).json({ error: 'Error retrieving memos' });
@@ -161,7 +163,7 @@ router.get('/:date', verifyToken, verifyUser, verifyCouple, async (req, res) => 
   try {
     const memo = await Memo.findOne({ couple_id, date });
     if (memo) {
-      console.log(req.decoded.user.name,' GET /memos/:date 200 OK', memo.content);
+      console.log(`${req.currentDate} - ${req.decoded.user.name} GET /memos/:date 200 OK - `, memo.content);
       res.status(200).json(memo);
     } else {
       res.status(404).json({ error: 'Memo not found for the specified date' });
@@ -229,7 +231,7 @@ router.put('/:date', verifyToken,verifyUser, verifyCouple, async (req, res) => {
     );
 
     if (updatedMemo) {
-      console.log(req.decoded.user.name,' PUT /memos/:date 200 OK', updatedMemo.content);
+      console.log(`${req.currentDate} - ${req.decoded.user.name} PUT /memos/:date 200 OK - `, updatedMemo.content);
       res.status(200).json(updatedMemo);
     } else {
       const newMemo = new Memo({ couple_id, date, content });
@@ -294,7 +296,7 @@ router.delete('/memoid/:memoId', verifyToken,verifyUser, verifyCouple, async (re
   try {
     const deletedMemo = await Memo.findByIdAndDelete(memoId);
     if (deletedMemo) {
-      console.log(req.decoded.user.name,' DELETE /memos/memoid/:memoId 200 OK', deletedMemo.content);
+      console.log(`${req.currentDate} - ${req.decoded.user.name} DELETE /memos/memoid/:memoId 200 OK - `, deletedMemo.content);
       res.status(200).json({ message: 'Memo deleted successfully' });
     } else {
       res.status(400).json({ error: 'Invalid request' });
@@ -373,7 +375,7 @@ router.delete('/date/:date', verifyToken, verifyUser, verifyCouple, async (req, 
     });
 
     if (deletedMemos) {
-      console.log(req.decoded.user.name,' DELETE /memos/date/:date 200 OK', deletedMemos);
+      console.log(`${req.currentDate} - ${req.decoded.user.name} DELETE /memos/date/:date 200 OK - deletedMemos.length: ${deletedMemos.length}`);
       res.status(200).json({ message: 'Memos deleted successfully' });
     } else {
       res.status(400).json({ error: 'Invalid request' });

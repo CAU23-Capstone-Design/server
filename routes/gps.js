@@ -171,8 +171,7 @@ router.post('/',verifyToken, verifyUser, verifyCouple, async (req, res, next) =>
       longitude,
       timestamp: currentKSTDate,
     });
-
-    console.log(req.decoded.user.name,' POST /gps 201 OK - ', 'lat: ',gpsData.latitude,', long: ' ,gpsData.longitude);
+    console.log(`${req.currentDate} - ${req.decoded.user.name} POST /gps 201 OK - `, 'lat: ',gpsData.latitude,', long: ' ,gpsData.longitude);
     res.status(201).json(gpsData);
   } catch (error) {
     next(error);
@@ -265,7 +264,7 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
       }
     }
 
-    console.log(req.decoded.user.name, ' GET /gps/check-nearby 200 OK - ', { isNearby, distance });
+    console.log(`${req.currentDate} - ${req.decoded.user.name} GET /gps/check-nearby 200 OK - `, 'isNearby: ',isNearby,', distance: ' ,distance);
     res.status(200).json({ isNearby, distance });
   } catch (error) {
     next(error);
@@ -326,13 +325,9 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
     const startDate = new Date(date);
     const endDate = new Date(date);
     endDate.setDate(endDate.getDate() + 1);
-
-    console.log(startDate, endDate);
-
     query.timestamp = { $gte: startDate, $lt: endDate };
 
     const gpsData = await CouplesGps.find(query, { _id: 0, latitude: 1, longitude: 1 });
-    console.log(gpsData);
 
     // 클러스터링 알고리즘에 필요한 파라미터 설정
     const eps = 20; // 밀도 기반 클러스터링에서 가장 중요한 하이퍼파라미터로, 한 클러스터에 포함되는 점들 사이의 최대 거리
@@ -350,8 +345,7 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
         count: cluster.length,
       };
     });
-
-    console.log(req.decoded.user.name, ' GET /gps/couples 200 OK - ', { clusters });
+    console.log(`${req.currentDate} - ${req.decoded.user.name} GET /gps/couples 200 OK - `, { clusters });
     // 클러스터링 결과를 반환
     res.status(200).json({ clusters });
   } catch (error) {
@@ -387,8 +381,9 @@ try {
     if (!gpsData) {
     res.status(404).json({ error: 'GPS data not found for the given user_id' });
     } else {
-    console.log(req.decoded.user.name,' GET /gps/user 200 OK - ', gpsData.length);
-    res.status(200).json(gpsData);
+
+      console.log(`${req.currentDate} - ${req.decoded.user.name} GET /gps/user 200 OK - `, gpsData.length);
+      res.status(200).json(gpsData);
     }
 } catch (error) {
   next(error);
@@ -453,7 +448,7 @@ router.put('/:index', verifyToken, verifyUser, verifyCouple, async (req, res, ne
         return;
       }
 
-      console.log(req.decoded.user.name,' PUT /gps/{index} 200 OK - ', updatedGpsData);
+      console.log(`${req.currentDate} - ${req.decoded.user.name} PUT /gps/{index} 200 OK - `, updatedGpsData);
       res.json(updatedGpsData);
     } catch (error) {
       next(error);
@@ -468,8 +463,8 @@ router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res,
       res.status(404).json({ error: 'GPS data not found' });
       return;
     }
-    console.log(req.decoded.user.name,' DELETE /gps/{index} 204 OK - ', result);
-    res.status(204).send();
+      console.log(`${req.currentDate} - ${req.decoded.user.name} DELETE /gps/{index} 204 OK - `, result);
+      res.status(204).send();
   } catch (error) {
     next(error);
   }

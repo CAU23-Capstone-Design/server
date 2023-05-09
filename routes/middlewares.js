@@ -9,6 +9,8 @@ module.exports = {
       if (typeof bearerHeader !== 'undefined') {
         const bearer = bearerHeader.split(' ');
         const token = bearer[1];
+        const currentKSTDate = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+        req.currentDate = currentKSTDate;
 
         // 토큰을 검증합니다.
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
