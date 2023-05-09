@@ -9,7 +9,7 @@ module.exports = {
       if (typeof bearerHeader !== 'undefined') {
         const bearer = bearerHeader.split(' ');
         const token = bearer[1];
-        const currentKSTDate = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+        const currentKSTDate = new Date();
         req.currentDate = currentKSTDate;
 
         // 토큰을 검증합니다.
