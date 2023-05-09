@@ -387,7 +387,7 @@ try {
     if (!gpsData) {
     res.status(404).json({ error: 'GPS data not found for the given user_id' });
     } else {
-    console.log(req.decoded.user.name,' GET /gps/user 200 OK - ', gpsData);
+    console.log(req.decoded.user.name,' GET /gps/user 200 OK - ', gpsData.length);
     res.status(200).json(gpsData);
     }
 } catch (error) {
