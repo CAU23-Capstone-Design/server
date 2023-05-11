@@ -678,7 +678,6 @@ router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, r
     // DB에서 이미지 정보 삭제
     await Image.deleteOne({ couple_id, local_id });
 
-    console.log(req.decoded.user.name,' DELETE /images/{local_id} 200 OK ', local_id);
     console.log(`${req.currentDate} ${req.decoded.user.name} DELETE /images/${local_id} 200 OK`);
     res.status(200).json({ message: 'Image deleted successfully' });
   } catch (error) {
