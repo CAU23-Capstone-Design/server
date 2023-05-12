@@ -1,15 +1,12 @@
 const express = require('express');
-const path = require('path');
-// const morgan = require('morgan');
 const dotenv = require('dotenv');
 const connect = require('./schemas');
 const swaggerUI = require('swagger-ui-express');
 const swaggerJsDoc = require('swagger-jsdoc');
-const md5 = require('md5')
 const https = require('https');
 const fs = require('fs');
 
-// 실 서비스 라우터들
+// 실 서비스 라우터
 const imagesRouter = require('./routes/images');
 const loginRouter = require('./routes/login');
 const couplesRouter = require('./routes/couples')
@@ -17,7 +14,7 @@ const gpsRouter = require('./routes/gps');
 const usersRouter = require('./routes/users');
 const memosRouter = require('./routes/memo');
 
-// 개발용 라우터들
+// 개발용 라우터
 const devUserRouter = require('./routes/dev/users');
 const devCoupleRouter = require('./routes/dev/couples');
 const devTokenRouter = require('./routes/dev/token');

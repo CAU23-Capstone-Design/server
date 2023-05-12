@@ -1,6 +1,5 @@
 node_modules
 uploads
 .foreverignore
-current.log
 .env
 start.sh
