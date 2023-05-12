@@ -277,6 +277,93 @@ router.get('/', verifyToken, async (req, res) => {
 
 /**
  * @swagger
+ * /couples/info:
+ *   get:
+ *     summary: 커플의 두 사용자 정보를 조회
+ *     tags:
+ *       - Couple
+ *     security:
+ *       - jwtToken: []
+ *     responses:
+ *       200:
+ *         description: 커플의 정보가 반환된다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user1:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     gender:
+ *                       type: string
+ *                 user2:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     gender:
+ *                       type: string
+ *                 firstDate:
+ *                   type: string
+ *                   format: date
+ *       404:
+ *         description: Couple not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ */
+router.get('/info', verifyToken, async (req, res) => {
+  try {
+    // 만약 커플의 정보나 사용자 정보가 없으면 404 에러를 반환한다.
+    const user1_id = req.decoded.user._id;
+    const couple = await Couple.findOne({ $or: [{ user1_id }, { user2_id: user1_id }] });
+    const user2_id = couple.user1_id == user1_id ? couple.user2_id : couple.user1_id;
+    const user1 = await User.findOne({ _id: user1_id });
+    const user2 = await User.findOne({ _id: user2_id });
+
+    if (!couple || !user1 || !user2) {
+      return res.status(404).json({ message: 'Couple not found' });
+    }
+
+
+    res.status(200).json({
+      "user1": {
+        "name": user1.name,
+        "gender": user1.gender,
+      },
+      "user2": {
+        "name": user2.name,
+        "gender": user2.gender,
+      },
+      "firstDate": couple.firstDate
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+/**
+ * @swagger
  * /couples:
  *   put:
  *     summary: 커플 정보 수정
@@ -361,5 +448,8 @@ router.delete('/', verifyToken, async (req, res) => {
     next(error);
   }
 });
+
+
+
 
 module.exports = router;
