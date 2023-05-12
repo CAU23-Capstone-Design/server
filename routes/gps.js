@@ -330,7 +330,7 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
     const gpsData = await CouplesGps.find(query, { _id: 0, latitude: 1, longitude: 1 });
 
     // 클러스터링 알고리즘에 필요한 파라미터 설정
-    const eps = 20; // 밀도 기반 클러스터링에서 가장 중요한 하이퍼파라미터로, 한 클러스터에 포함되는 점들 사이의 최대 거리
+    const eps = 15; // 밀도 기반 클러스터링에서 가장 중요한 하이퍼파라미터로, 한 클러스터에 포함되는 점들 사이의 최대 거리
     const minPoints = 10; // 클러스터를 구성하는 최소한의 점의 개수
 
     // 클러스터링 실행
@@ -469,6 +469,59 @@ router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res,
     next(error);
   }
 });
+
+/**
+ * @swagger
+ * /gps/couples/dates/{yearMonth}:
+ *  get:
+ *      summary: 연인이 해당 월에 만난 일자들을 반환
+ *      security:
+ *       - jwtToken: []
+ *      tags:
+ *       - GPS
+ *      parameters:
+ *        - in: path
+ *          name: yearMonth
+ *          schema:
+ *            type: string
+ *            example: '2023-05'
+ *          required: true
+ *          description: 연인이 만난 일자를 알고 싶은 년-월 정보를 입력 (형식 2023-05)
+ *      responses:
+ *          200:
+ *              description: 성공적으로 일자가 리턴 된다.
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: array
+ *                          items:
+ *                              type: integer
+ *                              description: 만난 날짜의 일자
+ *                          example: [1, 3, 5, 7, 8, 10, 14, 20, 21, 22, 30]
+ *          400:
+ *              description: Invalid yearMonth format
+ *          401:
+ *              description: Invalid token
+ *          500:
+ *              description: Internal server error
+ */
+router.get('/couples/dates/:yearMonth', async (req, res) => {
+  const { yearMonth } = req.params;
+  const startDate = new Date(`${yearMonth}-01T00:00:00Z`);
+  const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+
+  const gpsData = await CouplesGps.find({
+      timestamp: {
+          $gte: startDate,
+          $lt: endDate
+      }
+  });
+
+  const dates = [...new Set(gpsData.map(data => data.timestamp.getDate()))];
+
+  res.json(dates);
+});
+
 
   
 module.exports = router;
