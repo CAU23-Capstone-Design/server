@@ -255,6 +255,7 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
 
       if (!existingCouplesGps) {
         console.log("save couples gps data");
+        
         await CouplesGps.create({
           couple_id: req.decoded.couple.couple_id,
           latitude: currentUserGps.latitude,
@@ -530,12 +531,16 @@ router.get('/couples/dates/:yearMonth', verifyToken,verifyUser,verifyCouple, asy
   const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
 
   const gpsData = await CouplesGps.find({
-      timestamp: {
+    couple_id : req.decoded.couple.couple_id,
+    timestamp: {
           $gte: startDate,
           $lt: endDate
       },
-      couple_id : req.decoded.couple.couple_id
   });
+  console.log(req.decoded.couple.couple_id,);
+  console.log(startDate, endDate);
+  console.log(gpsData);
+
 
   // 각각의 날짜에 최소 gps 데이터는 3개 이상이어야 한다.
   const dates = [...new Set(gpsData.map(data => data.timestamp.getDate()))].filter(date => {
