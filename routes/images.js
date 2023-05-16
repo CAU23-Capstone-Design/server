@@ -572,7 +572,7 @@ router.get('/:local_id/thumbnail', verifyToken, verifyUser, verifyCouple, async 
     // 썸네일 이미지 복호화
     const decryptedThumbnail = decryptImage(encryptedThumbnailBuffer, secretKey);
 
-    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id}/thumbnail 200 OK`);
+    // console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id}/thumbnail 200 OK`);
     const fileExtension = path.extname(thumbnailPath);
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(decryptedThumbnail);
