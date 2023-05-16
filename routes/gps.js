@@ -255,7 +255,7 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
 
       if (!existingCouplesGps) {
         console.log("save couples gps data");
-        const couplesGpsData = await CouplesGps.create({
+        await CouplesGps.create({
           couple_id: req.decoded.couple.couple_id,
           latitude: currentUserGps.latitude,
           longitude: currentUserGps.longitude,
