@@ -528,7 +528,7 @@ router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res,
 router.get('/couples/dates/:yearMonth', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   const { yearMonth } = req.params;
   const startDate = new Date(`${yearMonth}-01T00:00:00Z`);
-  const endDate = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 0);
+  const endDate = new Date(startDate.getFullYear(), startDate.getMonth + 1, 0);
 
   console.log(startDate, endDate);
 
