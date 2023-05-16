@@ -517,7 +517,7 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res)
       .catch((error) => {
         throw new Error('Error resizing image');
       });
-    console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id} 200 OK`);
+    //console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id} 200 OK`);
     const fileExtension = path.extname(imagePath);
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(resizedImageBuffer);
