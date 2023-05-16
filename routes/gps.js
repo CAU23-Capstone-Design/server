@@ -525,32 +525,37 @@ router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res,
  *          500:
  *              description: Internal server error
  */
-router.get('/couples/dates/:yearMonth', verifyToken,verifyUser,verifyCouple, async (req, res) => {
+router.get('/couples/dates/:yearMonth', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   const { yearMonth } = req.params;
   const startDate = new Date(`${yearMonth}-01T00:00:00Z`);
-  const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+  const endDate = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 0);
 
   const gpsData = await CouplesGps.find({
-    couple_id : req.decoded.couple.couple_id,
+    couple_id: req.decoded.couple.couple_id,
     timestamp: {
-          $gte: startDate,
-          $lt: endDate
-      },
+      $gte: startDate,
+      $lt: endDate,
+    },
   });
-  console.log(req.decoded.couple.couple_id,);
-  console.log(startDate, endDate);
-  console.log(gpsData);
 
-
-  // 각각의 날짜에 최소 gps 데이터는 3개 이상이어야 한다.
-  const dates = [...new Set(gpsData.map(data => data.timestamp.getDate()))].filter(date => {
-      const gpsDataByDate = gpsData.filter(data => data.timestamp.getDate() === date);
-      return gpsDataByDate.length >= 3;
+  const dates = [
+    ...new Set(
+      gpsData.map((data) => {
+        // Convert the date to KST by adding 9 hours
+        const kstDate = new Date(data.timestamp.getTime() + 9 * 60 * 60 * 1000);
+        return kstDate.getUTCDate();
+      })
+    ),
+  ].filter((date) => {
+    const gpsDataByDate = gpsData.filter((data) => {
+      const kstDate = new Date(data.timestamp.getTime() + 9 * 60 * 60 * 1000);
+      return kstDate.getUTCDate() === date;
+    });
+    return gpsDataByDate.length >= 3;
   });
 
   res.json(dates);
 });
-
 
   
 module.exports = router;
