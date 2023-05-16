@@ -530,6 +530,8 @@ router.get('/couples/dates/:yearMonth', verifyToken, verifyUser, verifyCouple, a
   const startDate = new Date(`${yearMonth}-01T00:00:00Z`);
   const endDate = new Date(startDate.getUTCFullYear(), startDate.getUTCMonth() + 1, 0);
 
+  console.log(startDate, endDate);
+
   const gpsData = await CouplesGps.find({
     couple_id: req.decoded.couple.couple_id,
     timestamp: {
@@ -542,13 +544,13 @@ router.get('/couples/dates/:yearMonth', verifyToken, verifyUser, verifyCouple, a
     ...new Set(
       gpsData.map((data) => {
         // Convert the date to KST by adding 9 hours
-        const kstDate = new Date(data.timestamp.getTime() + 9 * 60 * 60 * 1000);
+        const kstDate = new Date(data.timestamp.getTime());
         return kstDate.getUTCDate();
       })
     ),
   ].filter((date) => {
     const gpsDataByDate = gpsData.filter((data) => {
-      const kstDate = new Date(data.timestamp.getTime() + 9 * 60 * 60 * 1000);
+      const kstDate = new Date(data.timestamp.getTime());
       return kstDate.getUTCDate() === date;
     });
     return gpsDataByDate.length >= 3;
