@@ -335,7 +335,22 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
 
     // 클러스터링 실행
     const result = dbscan(gpsData, eps, minPoints);
-    const clusters = result.clusters;
+    var clusters = result.clusters;
+
+    // 만약 클러스터가 없으면 더 작은 범위로 클러스터 반환
+    if(clusters.length === 0) {
+      const smallerEps = 50;
+      const smallerMinPoints = 3;
+      const smallerResult = dbscan(gpsData, smallerEps, smallerMinPoints);
+      clusters = smallerResult.clusters;
+    }
+
+    if(clusters.length === 0) {
+      const smallerEps = 50;
+      const smallerMinPoints = 1;
+      const smallerResult = dbscan(gpsData, smallerEps, smallerMinPoints);
+      clusters = smallerResult.clusters;
+    }
 
     // clusters 중에서 대표 점 하나들만 추출, 각각의 클러스터에 몇개의 점이 포함되어 있는지도 확인
     clusters.forEach((cluster, index) => {
@@ -345,6 +360,7 @@ router.get('/couples', verifyToken, verifyUser, verifyCouple, async (req, res, n
         count: cluster.length,
       };
     });
+
     console.log(`${req.currentDate} - ${req.decoded.user.name} GET /gps/couples 200 OK - `, { clusters });
     // 클러스터링 결과를 반환
     res.status(200).json({ clusters });
@@ -517,7 +533,11 @@ router.get('/couples/dates/:yearMonth', async (req, res) => {
       }
   });
 
-  const dates = [...new Set(gpsData.map(data => data.timestamp.getDate()))];
+  // 각각의 날짜에 최소 gps 데이터는 3개 이상이어야 한다.
+  const dates = [...new Set(gpsData.map(data => data.timestamp.getDate()))].filter(date => {
+      const gpsDataByDate = gpsData.filter(data => data.timestamp.getDate() === date);
+      return gpsDataByDate.length >= 3;
+  });
 
   res.json(dates);
 });
