@@ -254,6 +254,7 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
       });
 
       if (!existingCouplesGps) {
+        console.log("save couples gps data");
         const couplesGpsData = new CouplesGps({
           couple_id: req.decoded.couple.couple_id,
           latitude: currentUserGps.latitude,
@@ -261,6 +262,9 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
           timestamp: currentUserGps.timestamp,
         });
         await couplesGpsData.save();
+      }
+      else{
+        console.log("couples gps not save");
       }
     }
 
