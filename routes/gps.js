@@ -525,7 +525,7 @@ router.delete('/:index', verifyToken, verifyUser, verifyCouple, async (req, res,
  *          500:
  *              description: Internal server error
  */
-router.get('/couples/dates/:yearMonth', async (req, res) => {
+router.get('/couples/dates/:yearMonth', verifyToken,verifyUser,verifyCouple, async (req, res) => {
   const { yearMonth } = req.params;
   const startDate = new Date(`${yearMonth}-01T00:00:00Z`);
   const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
@@ -534,7 +534,8 @@ router.get('/couples/dates/:yearMonth', async (req, res) => {
       timestamp: {
           $gte: startDate,
           $lt: endDate
-      }
+      },
+      couple_id : req.decoded.couple.couple_id
   });
 
   // 각각의 날짜에 최소 gps 데이터는 3개 이상이어야 한다.
