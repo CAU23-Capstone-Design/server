@@ -215,20 +215,9 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
     const otherUserId = req.decoded.couple.user1_id === user_id ? req.decoded.couple.user2_id : req.decoded.couple.user1_id; // 상대방 user의 id
 
     const currentUserGps = await Gps.findOne({ user_id: user_id }).sort({ timestamp: -1 });
-    // 상대방 user의 가장 최근 GPS 데이터, timestamp가 최근 5분 이내의 데이터만 가져옴
-    // Date를 사용할때 한국 시간 기준으로 사용하기 위해 9시간을 더해줌
-    /* 실제 서비스에서는 아래의 코드를 사용
-      const otherUserGps = await Gps.findOne({
-      user_id: otherUserId,
-      timestamp: { $gte: new Date(new Date().getTime() + 9 * 60 * 60 * 1000 - 5 * 60 * 1000) },
-    }).sort({ timestamp: -1 });
-    */
-
     const otherUserGps = await Gps.findOne({ user_id: otherUserId }).sort({ timestamp: -1 });
 
-
-
-
+    
     if (!currentUserGps || !otherUserGps) {
       res.status(404).json({ error: 'GPS data not found' });
       return;
@@ -263,9 +252,45 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
           timestamp: currentUserGps.timestamp,
         });
       }
-      else{
-        console.log("couples gps not save");
+    } else{
+      // 만약 같은 사용자의 이전 gps 좌표와의 거리가 100m 이상이면, 
+      // 빠르게 이동하고 있는지 아닌지 확인은 한번 해보자
+      // current UTC date
+      const currentUTCDate = new Date();
+      const currentKSTDate = new Date(currentUTCDate.getTime() + 9 * 60 * 60 * 1000);
+      const fiveMinutesAgo = new Date(currentKSTDate.getTime() - 5 * 60 * 1000);
+
+      const currentTwoUserGps = await Gps.find({ 
+        user_id: user_id, 
+        timestamp: { $gte: fiveMinutesAgo }
+      }).sort({ timestamp: -1 }).limit(2);
+
+      if (currentTwoUserGps.length > 2) {
+        const recentTwoPointsDistance = getDistanceBetweenPoints(
+          currentTwoUserGps[0].latitude,
+          currentTwoUserGps[0].longitude,
+          currentTwoUserGps[1].latitude,
+          currentTwoUserGps[1].longitude
+        );
+  
+        // check if distance is greater than 200m
+        if (recentTwoPointsDistance > 200) {
+          // x2 is currentTwoUserGps[1] and x1 is currentTwoUserGps[0]
+          // if distance from x2 (old point) to k1 (other user's point) is less than distance from x2 to x1 (recent point), it means k1 is inside the circle
+          const distanceFromOldPointToOtherUser = getDistanceBetweenPoints(
+            currentTwoUserGps[1].latitude,
+            currentTwoUserGps[1].longitude,
+            otherUserGps.latitude,
+            otherUserGps.longitude
+          );
+  
+          if (distanceFromOldPointToOtherUser <= recentTwoPointsDistance) {
+            isNearby = true;
+          }
+        }
+
       }
+      
     }
 
     console.log(`${req.currentDate} - ${req.decoded.user.name} GET /gps/check-nearby 200 OK - `, 'isNearby: ',isNearby,', distance: ' ,distance);
