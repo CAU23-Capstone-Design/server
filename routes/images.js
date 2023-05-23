@@ -483,7 +483,7 @@ router.get('/thumbnails', verifyToken, verifyUser, verifyCouple, async (req, res
  *       500:
  *         description: 이미지 다운로드 오류
  */
-router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const local_id = req.params.local_id;
   const couple_id = req.decoded.couple.couple_id;
   const quality = parseInt(req.query.quality) || 100;
@@ -502,22 +502,31 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res)
     // 이미지 복호화
     const decryptedImage = decryptImage(encryptedImageBuffer, secretKey);
 
-    // 이미지 리사이징
-    const resizedImageBuffer = await sharp(decryptedImage)
-      .metadata()
-      .then(({ width, height }) =>
-        sharp(decryptedImage)
-          .resize({
-            width: Math.round(width * (quality / 100)),
-            height: Math.round(height * (quality / 100)),
-            fit: 'contain',
-          })
-          .toBuffer()
-      )
-      .catch((error) => {
-        throw new Error('Error resizing image');
-      });
-    //console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id} 200 OK`);
+    let resizedImageBuffer;
+
+    if (req.query.quality) {
+      // 이미지 리사이징
+      resizedImageBuffer = await sharp(decryptedImage)
+        .metadata()
+        .then(({ width, height }) =>
+          sharp(decryptedImage)
+            .resize({
+              width: Math.round(width * (quality / 100)),
+              height: Math.round(height * (quality / 100)),
+              fit: 'contain',
+            })
+            .rotate()
+            .toBuffer()
+        )
+        .catch((error) => {
+          throw new Error('Error resizing image');
+        });
+    } else {
+      console.log(`${req.currentDate} ${req.decoded.user.name} GET /images/${local_id} 200 OK`);
+      resizedImageBuffer = decryptedImage;
+    }
+
+
     const fileExtension = path.extname(imagePath);
     res.setHeader('Content-Type', `image/${fileExtension}`);
     res.status(200).send(resizedImageBuffer);
