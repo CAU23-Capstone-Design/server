@@ -203,7 +203,7 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
 
     console.time("image_encryption");
     // 이미지 저장    
-    const imageBuffer = await fs.promises.readFile(req.file.path);
+    const imageBuffer = await sharp(req.file.path).rotate().toBuffer();
     const { iv, encrypted } = encryptImage(imageBuffer, secretKey);
     console.timeEnd("image_encryption");
 
@@ -515,7 +515,6 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res,
               height: Math.round(height * (quality / 100)),
               fit: 'contain',
             })
-            .rotate()
             .toBuffer()
         )
         .catch((error) => {
