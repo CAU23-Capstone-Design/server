@@ -221,7 +221,7 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
     fs.promises.writeFile(encryptedImagePath, Buffer.concat([iv, encrypted]));
 
     // 썸네일 생성 및 암호화
-    const thumbnailBuffer = await sharp(req.file.path).resize({ width: 200 }).toBuffer();
+    const thumbnailBuffer = await sharp(req.file.path).resize({ width: 200 }).rotate().toBuffer();
     const { iv: thumbnailIv, encrypted: thumbnailEncrypted } = encryptImage(thumbnailBuffer, secretKey);
 
     // 암호화된 썸네일 저장
