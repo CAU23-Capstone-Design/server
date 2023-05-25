@@ -3,7 +3,7 @@ const User = require('../schemas/user');
 const Couple = require('../schemas/couple');
 const Token = require('../schemas/tokens');
 const router = express.Router();
-const {verifyToken} = require('./middlewares');
+const { verifyToken, verifyUser, verifyCouple} = require('./middlewares');
 const jwt = require('jsonwebtoken');
 
 const crypto = require('crypto');
