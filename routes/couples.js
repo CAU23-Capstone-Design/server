@@ -438,6 +438,8 @@ router.delete('/', verifyToken, async (req, res) => {
     const couple_id = req.decoded.couple.couple_id;
 
     const couple = await Couple.findOneAndDelete({ couple_id });
+    const user2 = await User.findOneAndDelete({ _id: req.decoded.couple.user2_id });
+    const user1 = await User.findOneAndDelete({ _id: req.decoded.couple.user1_id });
 
     if (!couple) {
       return res.status(404).json({ message: 'Couple not found' });
