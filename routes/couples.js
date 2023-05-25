@@ -433,7 +433,7 @@ router.put('/', verifyToken, async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-router.delete('/', verifyToken, async (req, res) => {
+router.delete('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
   try {
     const couple_id = req.decoded.couple.couple_id;
 
@@ -444,7 +444,7 @@ router.delete('/', verifyToken, async (req, res) => {
     if (!couple) {
       return res.status(404).json({ message: 'Couple not found' });
     }
-
+    console.log(`${req.currentDate} ${req.decoded.user.name} DELETE /couples 200 OK ${couple_id}`);
     res.json({ message: 'Couple deleted successfully' });
   } catch (error) {
     next(error);
