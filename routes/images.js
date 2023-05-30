@@ -171,7 +171,7 @@ const getGeoLocation = async (longitude, latitude) => {
  *         description: 이미지 업로드 실패
  */
 
-router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), async (req, res) => {
+router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), async (req, res, next) => {
   const local_id = req.body.local_id.replace(/"/g, '');
   const couple_id = req.decoded.couple.couple_id;
   const user_id = req.decoded.user._id;
@@ -278,7 +278,7 @@ router.post('/', verifyToken, verifyUser, verifyCouple, upload.single('image'), 
  *       500:
  *         description: 로컬 이미지 ID 목록 조회 오류
  */
-router.get('/local-ids', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.get('/local-ids', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const couple_id = req.decoded.couple.couple_id;
 
   try {
@@ -312,7 +312,7 @@ router.get('/local-ids', verifyToken, verifyUser, verifyCouple, async (req, res)
  *       500:
  *         description: 이미지 정보 조회 오류
  */
-router.get('/local-ids/info', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.get('/local-ids/info', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const couple_id = req.decoded.couple.couple_id;
 
   try {
@@ -395,7 +395,7 @@ router.get('/local-ids/info', verifyToken, verifyUser, verifyCouple, async (req,
  *       500:
  *         description: 썸네일 이미지 범위 다운로드 오류
  */
-router.get('/thumbnails', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.get('/thumbnails', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const start = parseInt(req.query.start);
   const end = parseInt(req.query.end);
   const date = req.query.date;
@@ -562,7 +562,7 @@ router.get('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res,
  *       500:
  *         description: 썸네일 이미지 다운로드 오류
  */
-router.get('/:local_id/thumbnail', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.get('/:local_id/thumbnail', verifyToken, verifyUser, verifyCouple, async (req, res, next ) => {
   const local_id = req.params.local_id;
   const couple_id = req.decoded.couple.couple_id;
 
@@ -617,7 +617,7 @@ router.get('/:local_id/thumbnail', verifyToken, verifyUser, verifyCouple, async 
  *       500:
  *         description: 이미지 정보 가져오는 중 오류 발생
  */
-router.get('/:local_id/info', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.get('/:local_id/info', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const local_id = req.params.local_id;
   const couple_id = req.decoded.couple.couple_id;
 
@@ -667,7 +667,7 @@ router.get('/:local_id/info', verifyToken, verifyUser, verifyCouple, async (req,
  *       500:
  *         description: 이미지 삭제 중 오류 발생
  */
-router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const local_id = req.params.local_id;
   const couple_id = req.decoded.couple.couple_id;
 
@@ -716,7 +716,7 @@ router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, r
  *       500:
  *         description: 이미지 삭제 중 오류 발생
  */
-router.delete('/', verifyToken, verifyUser, verifyCouple, async (req, res) => {
+router.delete('/', verifyToken, verifyUser, verifyCouple, async (req, res, next) => {
   const couple_id = req.decoded.couple.couple_id;
 
   try {
