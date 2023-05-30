@@ -84,7 +84,9 @@ const getGeoLocation = async (longitude, latitude) => {
 
     return { 'area1' : area1, 'area2': area2, 'area3':area3 };
   } catch (error) {
-    next(error);
+    console.error("naver api Error");
+    console.error(error);   
+    throw error;
   }
 };
 
