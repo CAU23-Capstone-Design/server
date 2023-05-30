@@ -679,12 +679,13 @@ router.delete('/:local_id', verifyToken, verifyUser, verifyCouple, async (req, r
       return;
     }
 
+    // DB에서 이미지 정보 삭제
+    await Image.deleteOne({ couple_id, local_id });
+
     // 이미지 파일 삭제
     await fs.promises.unlink(image.image_url);
     await fs.promises.unlink(image.thumbnail_url);
 
-    // DB에서 이미지 정보 삭제
-    await Image.deleteOne({ couple_id, local_id });
 
     console.log(`${req.currentDate} ${req.decoded.user.name} DELETE /images/${local_id} 200 OK`);
     res.status(200).json({ message: 'Image deleted successfully' });
