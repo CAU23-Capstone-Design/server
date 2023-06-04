@@ -126,7 +126,9 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     const { code,firstDate } = req.body;
     const user1_id = req.decoded.user._id;
-    console.log(user1_id);
+    console.log(user1_id);  
+    console.log(code);
+    console.log(firstDate);
 
     // user1
     const user1 = await User.findOne({ _id: req.decoded.user._id});
