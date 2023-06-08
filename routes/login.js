@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../schemas/user');
 const Couple = require('../schemas/couple'); // Import Couple schema
 const router = express.Router();
+const Token = require('../schemas/tokens');
 
 /**
  * @swagger
@@ -114,6 +115,14 @@ router.post('/', async (req, res) => {
             token,
         });
         console.log('/login 토큰 발급',token);
+        if(couple){
+            Token.create({
+                user_id: userId,
+                user_name: nickname,
+                couple_id: couple.couple_id,
+                token: token
+              })
+        }
 
     } catch (error) {
         next(error);
