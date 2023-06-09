@@ -230,6 +230,8 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
       otherUserGps.longitude
     );
 
+    distance = distance / 100;
+
     const isNearby = distance <= 300; // 300 meters
 
     if (isNearby) {
