@@ -223,7 +223,7 @@ router.get('/check-nearby', verifyToken, verifyUser, verifyCouple, async (req, r
       return;
     }
 
-    const distance = getDistanceBetweenPoints(
+    let distance = getDistanceBetweenPoints(
       currentUserGps.latitude,
       currentUserGps.longitude,
       otherUserGps.latitude,
